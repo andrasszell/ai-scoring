@@ -173,7 +173,7 @@ CI runs the tests on Python 3.10–3.12 via GitHub Actions.
 
 - **Phase 0 (done):** separate collection from scoring; standardize evidence +
   document schema; add collector runs/status, raw-response preservation, clean exports.
-- **Phase 1:** stabilize the 6 core collectors; validate 25–50 companies.
+- **Phase 1:** follow [`docs/phase-1-development-plan.md`](docs/phase-1-development-plan.md) block-by-block.
 - **Phase 2:** high-value sources (technical blogs, docs, GitHub, press, case studies).
 - **Phase 3:** scale to the full S&P 500 with refresh + freshness monitoring.
 - **Phase 4:** versioned evidence snapshots + field-definition docs for the inference team.

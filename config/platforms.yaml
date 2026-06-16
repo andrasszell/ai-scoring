@@ -1,0 +1,288 @@
+# Platform registry — single source of truth for Team 1 data sources.
+# Schema: docs/data-collection-initial-plan.md §6A.4
+# Change workflow: edit this file → collector/tests → sync data-sources.md → change-log
+#
+# Rules (Coding Standards):
+#   - id values are stable; never rename once live.
+#   - phase 1 + enabled true = approved for collection.
+#   - phase 2/3 entries stay enabled false until promoted.
+
+registry_version: "1.0"
+
+loaders:
+  - id: wikipedia_sp500
+    display_name: Wikipedia S&P 500 constituents
+    vendor: Wikimedia Foundation
+    api_base_url: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies
+    auth:
+      env_key: SEC_USER_AGENT
+      required: true
+      notes: Used as HTTP User-Agent on all outbound requests, including Wikipedia.
+    phase: 1
+    enabled: true
+    cost_model: free
+    rate_limit_notes: Be polite; descriptive User-Agent required (403 without it).
+    cli_command: load-companies
+    notes: Sector and industry metadata (GICS). Merged with SEC CIKs in load-companies.
+
+  - id: sec_company_tickers
+    display_name: SEC company tickers
+    vendor: U.S. Securities and Exchange Commission
+    api_base_url: https://www.sec.gov/files/company_tickers.json
+    auth:
+      env_key: SEC_USER_AGENT
+      required: true
+    phase: 1
+    enabled: true
+    cost_model: free
+    rate_limit_notes: SEC fair-access policy; conservative rate limit in http client.
+    cli_command: load-companies
+    notes: CIK mapping for S&P 500 rows; full filer list used as analyze fallback.
+
+platforms:
+  # --- Phase 1: active evidence collectors ---
+
+  - id: sec_edgar
+    collector: sec_filings
+    cli_source: sec
+    source_type: sec_annual_filing
+    display_name: SEC EDGAR annual filings
+    vendor: U.S. Securities and Exchange Commission
+    api_base_url: https://data.sec.gov
+    auth:
+      env_key: SEC_USER_AGENT
+      required: true
+    phase: 1
+    enabled: true
+    cost_model: free
+    rate_limit_notes: ~4 req/s conservative rate limit in collector.
+    source_category: regulatory_filing
+    source_reliability: high
+    confidence_initial: 0.75
+    reprocessable: true
+    collector_version: "1.0.0"
+    notes: Latest 10-K, 20-F, 40-F and amendments. Raw HTML + extracted text stored.
+
+  - id: fmp_transcripts
+    collector: earnings_calls
+    cli_source: earnings
+    source_type: earnings_call_transcript
+    display_name: Financial Modeling Prep earnings transcripts
+    vendor: Financial Modeling Prep
+    api_base_url: https://financialmodelingprep.com/api/v3
+    auth:
+      env_key: FMP_API_KEY
+      required: false
+    phase: 1
+    enabled: true
+    cost_model: paid
+    rate_limit_notes: Transcript access typically requires a paid FMP plan.
+    source_category: official_company
+    source_reliability: high
+    confidence_initial: 0.70
+    reprocessable: true
+    collector_version: "1.0.0"
+    notes: Skipped with api_key_missing when FMP_API_KEY unset. Transcript text stored under data/raw/earnings/.
+
+  - id: serpapi_web
+    collector: web_products
+    cli_source: products
+    source_type: web_search_product
+    display_name: SerpAPI Google web search (products/services)
+    vendor: SerpAPI
+    api_base_url: https://serpapi.com/search.json
+    auth:
+      env_key: SERPAPI_API_KEY
+      required: false
+    phase: 1
+    enabled: true
+    cost_model: paid
+    rate_limit_notes: Per-search billing per SerpAPI plan quota.
+    source_category: news_article
+    source_reliability: low
+    confidence_initial: 0.40
+    reprocessable: false
+    collector_version: "1.0.0"
+    notes: Raw API responses stored in raw_api_responses. Per-domain refinement may upgrade official URLs.
+
+  - id: serpapi_jobs
+    collector: hiring_jobs
+    cli_source: hiring
+    source_type: job_posting
+    display_name: SerpAPI Google Jobs (incl. LinkedIn listings)
+    vendor: SerpAPI
+    api_base_url: https://serpapi.com/search.json
+    auth:
+      env_key: SERPAPI_API_KEY
+      required: false
+    phase: 1
+    enabled: true
+    cost_model: paid
+    rate_limit_notes: Same SerpAPI account as serpapi_web; google_jobs engine.
+    source_category: job_posting
+    source_reliability: medium
+    confidence_initial: 0.50
+    reprocessable: false
+    collector_version: "1.0.0"
+    notes: Job demand signal, not proof of deployed AI. LinkedIn postings flagged in metadata.
+
+  - id: patentsview
+    collector: patents
+    cli_source: patents
+    source_type: patent
+    display_name: PatentsView Search API
+    vendor: PatentsView (USPTO-derived)
+    api_base_url: https://search.patentsview.org/api/v1/patent/
+    auth:
+      env_key: PATENTSVIEW_API_KEY
+      required: false
+    phase: 1
+    enabled: true
+    cost_model: free
+    rate_limit_notes: Free API key; rate limits apply.
+    source_category: regulatory_filing
+    source_reliability: medium
+    confidence_initial: 0.55
+    reprocessable: false
+    collector_version: "1.0.0"
+    notes: Rough assignee name match; subsidiary/legal-name cleanup deferred to Phase 1 entity work.
+
+  - id: semantic_scholar
+    collector: research
+    cli_source: research
+    source_type: research_paper
+    display_name: Semantic Scholar Graph API
+    vendor: Semantic Scholar
+    api_base_url: https://api.semanticscholar.org/graph/v1/paper/search
+    auth:
+      env_key: SEMANTIC_SCHOLAR_API_KEY
+      required: false
+    phase: 1
+    enabled: true
+    cost_model: free
+    rate_limit_notes: Unauthenticated access heavily rate-limited (HTTP 429); key recommended.
+    source_category: third_party_database
+    source_reliability: medium
+    confidence_initial: 0.45
+    reprocessable: false
+    collector_version: "1.0.0"
+    notes: Company name match on papers; not all corporate research is indexed.
+
+  # --- Phase 2: planned — platform TBD, collectors not implemented ---
+
+  - id: github_repos
+    collector: github_repos
+    cli_source: github
+    source_type: github_repository
+    display_name: GitHub public repositories
+    vendor: GitHub
+    api_base_url: https://api.github.com
+    auth:
+      env_key: GITHUB_TOKEN
+      required: false
+    phase: 2
+    enabled: false
+    cost_model: free
+    rate_limit_notes: Authenticated requests recommended for higher limits.
+    source_category: third_party_database
+    source_reliability: medium
+    confidence_initial: 0.50
+    reprocessable: false
+    notes: Open-source AI activity signal. Collector not implemented in Phase 1.
+
+  - id: press_releases
+    collector: press_releases
+    cli_source: press
+    source_type: press_release
+    display_name: Company press releases
+    vendor: TBD
+    api_base_url: ""
+    auth:
+      env_key: ""
+      required: false
+    phase: 2
+    enabled: false
+    cost_model: unknown
+    source_category: press_release
+    source_reliability: medium
+    confidence_initial: 0.45
+    reprocessable: false
+    notes: Source vendor TBD (RSS, IR pages, or licensed feed).
+
+  - id: product_documentation
+    collector: product_docs
+    cli_source: product_docs
+    source_type: product_documentation
+    display_name: Product and developer documentation
+    vendor: TBD
+    api_base_url: ""
+    auth:
+      env_key: ""
+      required: false
+    phase: 2
+    enabled: false
+    cost_model: unknown
+    source_category: product_documentation
+    source_reliability: high
+    confidence_initial: 0.65
+    reprocessable: true
+    notes: First-party docs; high value for AI product signals.
+
+  # --- Phase 3: premium vendors — evaluate before enabling ---
+
+  - id: lightcast
+    collector: lightcast_hiring
+    cli_source: lightcast
+    source_type: job_posting
+    display_name: Lightcast workforce analytics
+    vendor: Lightcast
+    api_base_url: ""
+    auth:
+      env_key: LIGHTCAST_API_KEY
+      required: true
+    phase: 3
+    enabled: false
+    cost_model: licensed
+    source_category: third_party_database
+    source_reliability: high
+    confidence_initial: 0.70
+    reprocessable: false
+    notes: Premium hiring/workforce alternative to SerpAPI jobs. See §6A.1 evaluation criteria.
+
+  - id: alphasense
+    collector: alphasense_transcripts
+    cli_source: alphasense
+    source_type: earnings_call_transcript
+    display_name: AlphaSense
+    vendor: AlphaSense
+    api_base_url: ""
+    auth:
+      env_key: ALPHASENSE_API_KEY
+      required: true
+    phase: 3
+    enabled: false
+    cost_model: licensed
+    source_category: official_company
+    source_reliability: high
+    confidence_initial: 0.75
+    reprocessable: false
+    notes: Premium transcript/search alternative to FMP.
+
+  - id: revelio
+    collector: revelio_workforce
+    cli_source: revelio
+    source_type: job_posting
+    display_name: Revelio Labs workforce data
+    vendor: Revelio Labs
+    api_base_url: ""
+    auth:
+      env_key: REVELIO_API_KEY
+      required: true
+    phase: 3
+    enabled: false
+    cost_model: licensed
+    source_category: third_party_database
+    source_reliability: high
+    confidence_initial: 0.70
+    reprocessable: false
+    notes: Premium workforce/hiring analytics. Evaluate vs Lightcast.

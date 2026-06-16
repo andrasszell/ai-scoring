@@ -210,10 +210,13 @@ These sources should be added only if they materially improve evidence quality.
 
 ## 6A. Data Platform Decisions
 
-This section is the **single source of truth** for which platforms the collection
-layer uses: external data providers, internal storage, and the handoff to Team 2.
-Operational detail (env vars, reliability rules) lives in
-[`data-sources.md`](data-sources.md).
+This section describes **which platforms** the collection layer uses: external data
+providers, internal storage, and the handoff to Team 2.
+
+**Authoritative registry:** platform metadata lives in
+[`config/platforms.yaml`](../config/platforms.yaml), loaded at runtime (Step 1.2+).
+See **§6A.4** for schema and change workflow. Tables below remain human-readable
+summary; edit the YAML to change approved platforms.
 
 ### 6A.1 Evidence source platforms (Phase 1 — approved)
 
@@ -242,9 +245,8 @@ CLI: `ai-collect load-companies` (Wikipedia + SEC CIK merge).
 | Research papers | `research` | **Semantic Scholar** Graph API | `SEMANTIC_SCHOLAR_API_KEY` (optional) | Free tier heavily rate-limited; key raises limits | **Active** — works without key |
 
 **Phase 1 rule:** no new paid vendor is approved until Phase 1 validation (25–50
-companies) is complete and gaps are documented. Swapping a collector's backend
-(e.g. FMP → AlphaSense for transcripts) requires updating this table and
-`data-sources.md` in the same change.
+companies) is complete and gaps are documented. Swapping or adding a platform
+follows the **§6A.4 change workflow** (registry entry + collector + tests + docs).
 
 #### Phase 2 sources (planned — platform TBD)
 
@@ -330,6 +332,95 @@ Read-only HTTP API (optional)
 `ai-collect reprocess` rebuilds evidence from **stored document text** with no
 network — this is the reproducibility guarantee (§9). Any new storage backend
 must preserve raw documents or raw API responses with content hashes.
+
+---
+
+### 6A.4 Platform registry (single source of truth)
+
+As the number of sources grows, platform metadata must not be scattered across
+markdown tables, hardcoded dicts, and collector files. **One registry file** holds
+every approved platform; code and docs read from it.
+
+#### Registry file
+
+```text
+config/platforms.yaml          ← edit this to add/change platforms
+```
+
+Human-readable, version-controlled, reviewable in PRs. No code change required to
+approve a platform — only to wire a new collector adapter.
+
+#### Entry schema (each platform)
+
+```yaml
+platforms:
+  - id: sec_edgar                    # stable identifier (never rename once live)
+    collector: sec_filings           # maps to Collector.name in code
+    source_type: sec_annual_filing   # evidence_items.source_type
+    display_name: SEC EDGAR
+    vendor: U.S. Securities and Exchange Commission
+    api_base_url: https://data.sec.gov
+    auth:
+      env_key: SEC_USER_AGENT        # empty = no key required
+      required: true
+    phase: 1                         # 1 = approved, 2 = planned, 3 = evaluate
+    enabled: true                    # false = skip without deleting entry
+    cost_model: free
+    rate_limit_notes: "~4 req/s conservative"
+    source_category: regulatory_filing
+    source_reliability: high
+    confidence_initial: 0.75
+    reprocessable: true              # has stored document text for offline reprocess
+    notes: Annual filings (10-K, 20-F, 40-F + amendments)
+```
+
+Universe loaders (Wikipedia, SEC tickers) use the same file under a `loaders:` key
+with the same fields where applicable.
+
+#### What reads the registry
+
+| Consumer | Uses registry for |
+|---|---|
+| `evidence_collection.platforms` (loader module) | Parse, validate schema, expose typed `Platform` objects |
+| `sources.py` | Default category/reliability/confidence (overridden by registry) |
+| Collector registry | Which collectors are enabled; env-key presence checks |
+| `ai-collect show-platforms` | Human/ops view of approved platforms and key status |
+| `ai-collect collect` | Skip disabled platforms; surface `api_key_missing` from registry |
+| `data-sources.md` | **Generated or manually synced** from registry — not independently edited |
+
+#### Adding or changing a platform (change workflow)
+
+Every platform change follows the same steps so it stays simple and reliable:
+
+```text
+1. Edit config/platforms.yaml
+      — add row, set phase/enabled, fill auth + reliability fields
+2. Implement or update collector adapter (if new source)
+      — thin adapter: fetch + normalize; no hardcoded vendor metadata
+3. Add tests
+      — registry schema validation, collector with mocked API, status on missing key
+4. Sync docs
+      — regenerate or update data-sources.md from registry; note in change-log.md
+5. Verify
+      — ai-collect show-platforms
+      — ai-collect collect --source <new> --ticker <sample>
+      — ai-collect validate
+```
+
+**Do not** add platform details only to markdown or only to Python constants.
+The registry is the approval record; code implements behavior.
+
+#### Phase 3 premium vendors in the registry
+
+Premium candidates (Lightcast, Revelio, etc.) are stored with `phase: 3`,
+`enabled: false` until evaluation passes §6A.1 criteria. This keeps the full
+vendor landscape visible without activating collectors.
+
+#### Reliability rules
+
+- Registry entries for `phase: 1` with `enabled: true` are **approved for production collection**.
+- `phase: 2` entries document intent; collectors must not run until promoted to phase 1.
+- Disabling a platform (`enabled: false`) preserves history and config; collectors skip it cleanly.
 
 ---
 
@@ -822,19 +913,25 @@ research papers
 Tasks:
 
 ```text
+implement platform registry (config/platforms.yaml) — §6A.4
+migrate Phase 1 platform metadata from code/docs into registry
+add ai-collect show-platforms command
 improve error handling
-add collector status
+add collector status                    ← done (Phase 0)
 add source dates
-store raw documents or raw API responses
-deduplicate exact records
+store raw documents or raw API responses ← done (Phase 0)
+deduplicate exact records               ← done (audit remediation)
 add tests
-validate sample companies
+validate sample companies (25–50)
+populate companies.website_domain
+seed company_aliases
 ```
 
 Deliverable:
 
 ```text
 high-quality evidence corpus for 25–50 companies
++ platform registry as the single editable source list
 ```
 
 ---

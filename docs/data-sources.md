@@ -1,12 +1,26 @@
 # Data Sources
 
-Operational companion to **[§6A Data Platform Decisions](data-collection-initial-plan.md#6a-data-platform-decisions)**
-in the initial plan. That section is the **canonical approved-platform matrix**;
-this doc adds env vars, reliability rules, and day-to-day collector detail.
+Operational companion to the platform registry and
+**[§6A Data Platform Decisions](data-collection-initial-plan.md#6a-data-platform-decisions)**.
+
+## Where platform metadata lives
+
+| When | Source of truth | How to change |
+|---|---|---|
+| **Now (interim)** | This doc + §6A tables in the initial plan | Edit both + change-log |
+| **Phase 1 (live file)** | [`config/platforms.yaml`](../config/platforms.yaml) | Edit YAML; sync this doc after loader wired (Step 1.8) |
+
+See **[§6A.4 Platform registry](data-collection-initial-plan.md#6a4-platform-registry-single-source-of-truth)**
+for the schema, consumers, and the five-step change workflow.
+
+**Rule:** do not add platform details only to markdown or only to Python constants.
+The registry (once live) is the approval record; collectors implement fetch logic.
 
 ---
 
-## Phase 1 — approved platforms
+## Phase 1 — approved platforms (interim table)
+
+> Will be generated from `config/platforms.yaml` once the registry is implemented.
 
 ### Company universe
 
@@ -28,12 +42,14 @@ this doc adds env vars, reliability rules, and day-to-day collector detail.
 
 Run a subset: `ai-collect collect --source sec hiring --ticker MSFT`
 
+Future: `ai-collect show-platforms` — list all registry entries with key status.
+
 ---
 
 ## Source categories (controlled vocabulary)
 
 Applied automatically on every evidence row (`source_category`,
-`source_reliability`, `confidence_initial`). Defined in
+`source_reliability`, `confidence_initial`). Defaults from registry →
 `src/evidence_collection/sources.py`.
 
 `official_company`, `regulatory_filing`, `job_posting`, `press_release`,
@@ -70,21 +86,19 @@ A row whose URL is on the company's own `website_domain` is upgraded to
 
 ## Phase 3 premium vendors (evaluate — not approved)
 
-See [§6A.1 evaluation criteria](data-collection-initial-plan.md#6a1-evidence-source-platforms-phase-1--approved)
-in the initial plan. Candidates: Lightcast, Revelio, Coresignal, Proxycurl,
-LinkedIn Talent Insights, AlphaSense, FactSet, PitchBook, CB Insights,
-Similarweb, BuiltWith.
+Register in `platforms.yaml` with `phase: 3`, `enabled: false` when the registry
+exists. See [§6A.1 evaluation criteria](data-collection-initial-plan.md#6a1-evidence-source-platforms-phase-1--approved).
 
-No premium vendor may be wired into a collector until it has an approved row in
-§6A and an entry in this doc.
+Candidates: Lightcast, Revelio, Coresignal, Proxycurl, LinkedIn Talent Insights,
+AlphaSense, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith.
 
 ---
 
 ## Changing an approved platform
 
-When swapping a backend (e.g. FMP → AlphaSense for transcripts):
+Follow **[§6A.4 change workflow](data-collection-initial-plan.md#6a4-platform-registry-single-source-of-truth)**:
 
-1. Update **§6A.1** in `data-collection-initial-plan.md`
-2. Update this file and `.env.example`
-3. Record the decision in `change-log.md`
-4. Add/adjust collector tests
+1. Edit `config/platforms.yaml`
+2. Update collector adapter (if needed)
+3. Tests + `ai-collect validate`
+4. Sync this doc + `change-log.md`

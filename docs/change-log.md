@@ -2,6 +2,22 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Phase 1 Step 1.1: platform registry YAML
+
+- Added `config/platforms.yaml`: 2 universe loaders, 6 Phase 1 platforms (enabled),
+  Phase 2/3 stubs (disabled). Step-by-step plan in `phase-1-development-plan.md`.
+
+## 2026-06-16 — Platform registry planned (§6A.4)
+
+- Added **§6A.4 Platform registry** to the initial plan: `config/platforms.yaml`
+  as the single editable list of approved platforms; schema, consumers, and
+  five-step change workflow for adding sources reliably.
+- Expanded **Phase 1** in both plans: registry implementation is the first task
+  block before collector stabilization and 25–50 company validation.
+- Updated `implementation-plan.md` with detailed Phase 1 checklist (registry,
+  collectors, validation sample).
+- Updated `data-sources.md` to defer to registry once implemented.
+
 ## 2026-06-16 — Data platform decisions documented (§6A)
 
 - Added **§6A Data Platform Decisions** to `data-collection-initial-plan.md`:

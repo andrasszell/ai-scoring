@@ -5,10 +5,11 @@ This is the top-level control document referenced by the Coding Standards (§13)
 
 | Document | Role |
 |---|---|
-| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = approved data platforms** |
-| [`implementation-plan.md`](implementation-plan.md) | Current progress and next steps |
+| [`phase-1-development-plan.md`](phase-1-development-plan.md) | **Step-by-step Phase 1 checklist** (implement in order) |
+| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = platforms**, **§6A.4 = registry** |
+| [`implementation-plan.md`](implementation-plan.md) | Current progress; Phase 1 task checklist |
 | [`project-control.md`](project-control.md) | Scope, non-goals, architecture decisions |
-| [`data-sources.md`](data-sources.md) | Operational detail for §6A (env vars, reliability) |
+| [`data-sources.md`](data-sources.md) | Operational detail; synced from registry (Phase 1) |
 | [`scoring-methodology.md`](scoring-methodology.md) | Inference-layer scoring (Team 2) |
 | [`change-log.md`](change-log.md) | Important decisions and changes |
 
