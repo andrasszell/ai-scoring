@@ -1,11 +1,25 @@
+from unittest.mock import patch
+
 import pytest
 
+from evidence_collection.universe.domains import load_company_domains
 from evidence_collection.universe.validation import (
     default_validation_path,
     ensure_validation_companies,
     load_validation_entries,
     validation_tickers,
 )
+
+ELAN_SEC_ROW = {
+    "ticker": "ELAN",
+    "company_name": "Elanco Animal Health Inc",
+    "sector": None,
+    "industry": None,
+    "cik": "0001739104",
+    "exchange": None,
+    "country": "US",
+    "source_of_identifier": "sec_company_tickers",
+}
 
 
 def test_default_validation_path_exists():
@@ -31,17 +45,28 @@ def test_validation_tickers_include_default_and_sec_fallback():
     assert "PLTR" in tickers
 
 
-def test_ensure_validation_companies_uses_sec_fallback(conn):
-    entries = load_validation_entries()
-    sec_fallback = [e["ticker"] for e in entries if e["group"] == "sec_fallback"]
-    assert sec_fallback
-    companies, tickers = ensure_validation_companies(conn)
-    assert len(companies) == len(tickers) == 35
-    found = {c["ticker"] for c in companies}
-    for ticker in sec_fallback:
-        assert ticker in found
-        row = next(c for c in companies if c["ticker"] == ticker)
-        assert row.get("cik")
+def test_validation_tickers_have_domains():
+    domains = load_company_domains()
+    missing = [t for t in validation_tickers() if t not in domains]
+    assert missing == []
+
+
+def test_ensure_validation_companies_uses_sec_fallback(conn, tmp_path):
+    yaml_path = tmp_path / "val.yaml"
+    yaml_path.write_text(
+        "version: '1'\ncompanies:\n  - ticker: ELAN\n    group: sec_fallback\n",
+        encoding="utf-8",
+    )
+    with patch(
+        "evidence_collection.universe.validation.fetch_sec_companies",
+        return_value=[ELAN_SEC_ROW],
+    ):
+        companies, tickers = ensure_validation_companies(conn, path=yaml_path)
+    assert tickers == ["ELAN"]
+    assert len(companies) == 1
+    assert companies[0]["ticker"] == "ELAN"
+    assert companies[0]["cik"] == "0001739104"
+    assert companies[0]["website_domain"] == "elanco.com"
 
 
 def test_ensure_validation_companies_raises_for_unknown_ticker(conn, tmp_path):
@@ -50,5 +75,6 @@ def test_ensure_validation_companies_raises_for_unknown_ticker(conn, tmp_path):
         "version: '1'\ncompanies:\n  - ticker: NOTAREALTICKERXYZ\n    group: test\n",
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="NOTAREALTICKERXYZ"):
-        ensure_validation_companies(conn, path=bad_yaml)
+    with patch("evidence_collection.universe.validation.fetch_sec_companies", return_value=[]):
+        with pytest.raises(ValueError, match="NOTAREALTICKERXYZ"):
+            ensure_validation_companies(conn, path=bad_yaml)

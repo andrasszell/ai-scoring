@@ -20,7 +20,6 @@ from .universe import (
     load_universe,
     match_rows,
     resolve_company,
-    validation_tickers,
 )
 
 logger = get_logger("evidence_collection.cli")
@@ -81,6 +80,12 @@ def _select_companies(conn, args) -> tuple[list[dict], list[str] | None]:
 
 
 def cmd_collect(args) -> None:
+    if getattr(args, "validation_set", False) and (
+        getattr(args, "ticker", None) or getattr(args, "all", False) or getattr(args, "limit", None)
+    ):
+        raise SystemExit(
+            "Use --validation-set alone, or use --ticker / --all / --limit — not both."
+        )
     conn = _conn()
     if repo.count_companies(conn) == 0:
         print("Company universe is empty; loading S&P 500 first...")

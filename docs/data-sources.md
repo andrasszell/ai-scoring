@@ -124,6 +124,26 @@ A row whose URL is on the company's own `website_domain` is upgraded to
 Search aliases live in [`config/company_aliases.yaml`](../config/company_aliases.yaml).
 Inspect one company: `ai-collect validate-company MSFT`.
 
+## Phase 1 validation sample (Block D)
+
+| Source | Location | CLI |
+|---|---|---|
+| Validation company list | [`config/validation_companies.yaml`](../config/validation_companies.yaml) | `collect --validation-set` |
+| Loader | `src/evidence_collection/universe/validation.py` | `load-companies --validation-set` |
+
+35 tickers (mega-cap default universe, sector spread, mid-cap AI names, SEC-fallback
+filers such as ELAN). Tickers not in the S&P 500 load are upserted from the SEC
+`company_tickers.json` map. Website domains for the set live in
+[`config/company_domains.yaml`](../config/company_domains.yaml).
+
+```bash
+ai-collect load-companies --validation-set   # S&P 500 + ensure validation tickers
+ai-collect collect --validation-set          # collect all 35 (do not combine with --ticker)
+ai-collect export-all --output-dir data/exports/phase1_YYYYMMDD
+```
+
+QA notes: [`docs/qa/`](qa/).
+
 ---
 
 ## Changing an approved platform

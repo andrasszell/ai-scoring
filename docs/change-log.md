@@ -2,6 +2,13 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Block D audit fixes
+
+- **`collect --validation-set`** rejects conflicting `--ticker` / `--all` / `--limit`.
+- **`data-sources.md`** — Phase 1 validation sample section; **`.env.example`** —
+  `VALIDATION_COMPANIES_YAML`.
+- Tests: validation domain coverage, mocked SEC fallback, CLI conflict checks (124 tests).
+
 ## 2026-06-16 — Phase 1 complete (Block D: validation sample)
 
 - **`config/validation_companies.yaml`** — 35-ticker Phase 1 validation corpus (mega-cap,
