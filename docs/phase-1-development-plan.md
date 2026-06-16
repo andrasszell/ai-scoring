@@ -667,14 +667,38 @@ git status   # no .env, no data/*.sqlite committed
 
 ---
 
-## Block E — After Phase 1 (do not start yet)
+## Block E — Phase 2 starters (do not start yet)
 
-These are Phase 2 starters — listed so you know where Phase 1 ends:
+These are Phase 2 platform additions — listed so you know where Phase 1 ends:
 
 1. Add Phase 2 platform row to YAML (`enabled: false` → develop → `enabled: true`).
 2. Implement new collector adapter.
 3. Follow §6A.4 five-step workflow.
 4. Expand validation set.
+
+---
+
+## Block F — Post Phase 1: collection outcome semantics
+
+*Goal: distinguish “source had nothing” from “we fetched material but produced zero evidence,” and never treat failures as zero activity.*
+
+**Depends on:** Blocks A–D complete  
+**Full plan:** [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)
+
+| Step | Summary | Done |
+|------|---------|------|
+| F.1 | Document vocabulary, interpretation table, per-collector targets | [x] |
+| F.2 | `CollectorResult` + DB/metrics for `outcome_reason`, `source_hits` | [x] |
+| F.3 | All Phase 1 collectors set `reason:source_empty` / `reason:filtered_to_zero` | [x] |
+| F.4 | CLI: `status`, `validate-company`, exports show reason | [x] |
+| F.5 | Inference: exclude unknown/not-measured pillars from scoring | [x] |
+| F.6 | Re-run `--validation-set` + QA note | [x] |
+
+**Why now:** Phase 1 validation showed many `no_results` rows (e.g. MSFT hiring vs SEC
+filing with document but zero AI paragraphs) that mean different things for Team 2.
+
+**Do not start Block E (new platforms) until F.3–F.4 are done** — new collectors should
+emit reason codes from day one.
 
 ---
 
@@ -686,6 +710,7 @@ These are Phase 2 starters — listed so you know where Phase 1 ends:
 | B | `ai-collect load-companies`, `ai-collect validate-company MSFT` |
 | C | `ai-collect collect`, `ai-collect validate`, `ai-collect reprocess` |
 | D | `ai-collect collect --ticker …`, `ai-collect export-all`, `ai-collect validate` |
+| F | `post-phase-1-collection-outcomes-plan.md`, `ai-collect status` |
 
 ---
 
@@ -722,8 +747,16 @@ Block D — Validation sample
   [x] 4.3  full 25–50 run
   [x] 4.4  QA spot-check
   [x] 4.5  completion review
+
+Block F — Collection outcome semantics (post Phase 1)
+  [x] F.1  document & schema design
+  [x] F.2  model + persistence
+  [x] F.3  collector updates
+  [x] F.4  CLI & reporting
+  [x] F.5  inference guardrails
+  [x] F.6  validation re-run & QA
 ```
 
 ---
 
-*Last updated: 2026-06-16 — Phase 1 complete (Blocks A–D)*
+*Last updated: 2026-06-16 — Block F complete; Phase 1 Blocks A–F complete*

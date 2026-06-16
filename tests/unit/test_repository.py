@@ -1,5 +1,6 @@
 from evidence_collection.db import repository as repo
-from evidence_collection.models import CollectorResult
+from evidence_collection.models import CollectorResult, collector_result
+from evidence_collection.outcomes import OutcomeReason
 from evidence_collection.status import CollectionStatus
 
 
@@ -44,13 +45,33 @@ def test_record_status_and_summary(conn):
     repo.record_status(
         conn, run_id=run_id, ticker="MSFT", source_type="sec_annual_filing",
         collector_name="sec_filings", collector_version="1.0.0",
-        result=CollectorResult(CollectionStatus.SUCCESS, evidence_count=5),
+        result=collector_result(
+            CollectionStatus.NO_RESULTS,
+            outcome_reason=OutcomeReason.SOURCE_EMPTY,
+            message="no filing",
+            source_hits=0,
+            candidates_after_filter=0,
+        ),
         duration_seconds=0.1,
     )
     repo.finish_run(conn, run_id)
     summary = repo.status_summary(conn, ["MSFT"])
-    assert summary[0]["status"] == CollectionStatus.SUCCESS
-    assert summary[0]["evidence_count"] == 5
+    assert summary[0]["status"] == CollectionStatus.NO_RESULTS
+    assert summary[0]["message"] == "reason:source_empty — no filing"
+    assert summary[0]["source_hits"] == 0
+
+
+def test_quality_report_flags_missing_outcome_reason(conn):
+    repo.upsert_companies(conn, [_company()])
+    run_id = repo.start_run(conn, "collect", {"tickers": ["MSFT"]})
+    repo.record_status(
+        conn, run_id=run_id, ticker="MSFT", source_type="job_posting",
+        collector_name="hiring_jobs", collector_version="1.0.0",
+        result=CollectorResult(CollectionStatus.NO_RESULTS, message="legacy message"),
+        duration_seconds=0.1,
+    )
+    report = repo.quality_report(conn)
+    assert report["violations"]["missing_outcome_reason"] == 1
 
 
 def test_insert_evidence_rejects_rows_without_source_anchor(conn):

@@ -7,7 +7,8 @@ from ..config import settings
 from ..db import repository as repo
 from ..extraction import candidate_paragraphs, content_hash, html_to_text
 from ..http import get
-from ..models import CollectionContext, CollectorResult
+from ..models import CollectionContext, CollectorResult, collector_result
+from ..outcomes import OutcomeReason
 from ..status import CollectionStatus
 from .base import Collector
 
@@ -51,7 +52,12 @@ class SecFilingsCollector(Collector):
         api_calls += 1
         filing = _latest_annual_filing(submissions)
         if not filing:
-            return CollectorResult(CollectionStatus.NO_RESULTS, api_calls=api_calls, message="no_annual_filing")
+            return collector_result(
+                CollectionStatus.NO_RESULTS,
+                outcome_reason=OutcomeReason.SOURCE_EMPTY,
+                message="no annual filing on record",
+                api_calls=api_calls,
+            )
 
         cik_no_zeros = str(int(cik))
         url = ARCHIVES_URL.format(
@@ -103,5 +109,21 @@ class SecFilingsCollector(Collector):
                 )
             )
         inserted = repo.insert_evidence(conn, rows)
-        status = CollectionStatus.SUCCESS if inserted else CollectionStatus.NO_RESULTS
-        return CollectorResult(status, evidence_count=inserted, documents_count=1, api_calls=api_calls)
+        if inserted:
+            return collector_result(
+                CollectionStatus.SUCCESS,
+                evidence_count=inserted,
+                documents_count=1,
+                api_calls=api_calls,
+                source_hits=1,
+                candidates_after_filter=inserted,
+            )
+        return collector_result(
+            CollectionStatus.NO_RESULTS,
+            outcome_reason=OutcomeReason.FILTERED_TO_ZERO,
+            message="annual filing stored; no AI keyword paragraphs",
+            documents_count=1,
+            api_calls=api_calls,
+            source_hits=1,
+            candidates_after_filter=0,
+        )

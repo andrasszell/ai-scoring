@@ -40,3 +40,19 @@ def get(
     response = requests.get(url, params=params, headers=_headers(headers), timeout=settings.request_timeout)
     response.raise_for_status()
     return response
+
+
+def http_error_status(exc: BaseException) -> int | None:
+    """Extract HTTP status code from requests/tenacity exception chains."""
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, requests.HTTPError) and current.response is not None:
+            return int(current.response.status_code)
+        last_attempt = getattr(current, "last_attempt", None)
+        if last_attempt is not None and getattr(last_attempt, "failed", False):
+            current = last_attempt.exception()
+            continue
+        current = current.__cause__ or current.__context__
+    return None

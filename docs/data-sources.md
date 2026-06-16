@@ -144,6 +144,38 @@ ai-collect export-all --output-dir data/exports/phase1_YYYYMMDD
 
 QA notes: [`docs/qa/`](qa/).
 
+## Collection outcome semantics
+
+Every collector run must be explainable when evidence count is zero. See
+[`data-collection-initial-plan.md` §12](data-collection-initial-plan.md#12-collection-status-and-failure-handling)
+and the implementation plan
+[`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md).
+
+### Controlled reason codes (`collector_status.message`)
+
+When `status` is `success` or `no_results`, collectors should set:
+
+```text
+reason:source_empty       # API OK; origin returned nothing for this company/query
+reason:filtered_to_zero   # Origin had material; zero evidence rows after filter/extract
+reason:partial_success    # Some evidence; run hit caps/limits (optional)
+```
+
+### How to read a status row
+
+| `status` | Typical `message` | `documents_count` | Interpretation |
+|---|---|---|---|
+| `success` | — or `reason:partial_success` | any | Evidence and/or documents collected |
+| `no_results` | `reason:source_empty` | 0 | Source had nothing to offer |
+| `no_results` | `reason:filtered_to_zero` | ≥1 **or** `source_hits` ≥1 | **Not** “company has no AI” |
+| `source_unavailable` / `rate_limited` | error detail | — | **Unknown** — re-run later |
+| `api_key_missing` / `skipped` | key/platform detail | — | **Not measured** |
+
+All Phase 1 collectors emit `reason:…` on `no_results` rows (Block F complete).
+`ai-collect validate` gates on `missing_outcome_reason` for latest status per source.
+
+Inspect: `ai-collect status`, `ai-collect validate-company TICKER`.
+
 ---
 
 ## Changing an approved platform

@@ -12,6 +12,7 @@ from .logging_config import get_logger, setup_logging
 from .reprocess import reprocess_documents
 from .registry_gate import get_platform_registry, reset_registry_cache
 from .platforms import Platform, runtime_key_status
+from .outcomes import parse_outcome_detail, parse_outcome_reason
 from .runner import run_collection
 from .universe import (
     enrich_companies,
@@ -216,6 +217,13 @@ def cmd_validate(args) -> None:
     for c in report["coverage"]:
         print(f"  {c['source_type']:<24} {str(c['source_category']):<20} "
               f"{str(c['source_reliability']):<12} {c['rows']:>6} {c['companies']:>5}")
+    breakdown = report.get("outcome_breakdown") or []
+    if breakdown:
+        print("\nOutcome breakdown (latest status per source):")
+        print(f"  {'REASON':<20} {'STATUS':<14} {'RUNS':>6}")
+        for row in breakdown:
+            reason = row.get("outcome_reason") or "(none)"
+            print(f"  {reason:<20} {row['status']:<14} {row['runs']:>6}")
     if any(violations.values()):
         raise SystemExit(1)
 
@@ -245,10 +253,20 @@ def format_company_identity_report(conn, ticker: str) -> str:
     if statuses:
         lines.append("  Last collection status:")
         for row in statuses:
-            msg = f" — {row['message']}" if row.get("message") else ""
+            reason = parse_outcome_reason(row.get("message"))
+            detail = parse_outcome_detail(row.get("message"))
+            hits = row.get("source_hits") or 0
+            extra = []
+            if reason:
+                extra.append(f"reason={reason}")
+            if hits:
+                extra.append(f"hits={hits}")
+            if detail:
+                extra.append(detail)
+            suffix = f" ({', '.join(extra)})" if extra else ""
             lines.append(
                 f"    {row['source_type']:<24} {row['status']:<18} "
-                f"evidence={row['evidence_count']}{msg}"
+                f"evidence={row['evidence_count']}{suffix}"
             )
     else:
         lines.append("  Last collection status: (none — run ai-collect collect)")
@@ -273,10 +291,18 @@ def cmd_status(args) -> None:
     if not rows:
         print("No collection runs recorded yet. Run: ai-collect collect")
         return
-    print(f"{'TICKER':<8} {'SOURCE':<22} {'STATUS':<18} {'EVID':>5} {'DOCS':>5}  MESSAGE")
+    print(
+        f"{'TICKER':<8} {'SOURCE':<22} {'STATUS':<18} {'EVID':>5} {'DOCS':>5} "
+        f"{'HITS':>5} {'REASON':<18} DETAIL"
+    )
     for r in rows:
-        print(f"{r['ticker']:<8} {r['source_type']:<22} {r['status']:<18} "
-              f"{r['evidence_count']:>5} {r['documents_count']:>5}  {r['message'] or ''}")
+        reason = parse_outcome_reason(r.get("message")) or ""
+        detail = parse_outcome_detail(r.get("message")) or ""
+        print(
+            f"{r['ticker']:<8} {r['source_type']:<22} {r['status']:<18} "
+            f"{r['evidence_count']:>5} {r['documents_count']:>5} "
+            f"{(r.get('source_hits') or 0):>5} {reason:<18} {detail}"
+        )
 
 
 def format_platforms_table(platforms: list[Platform], *, registry_version: str) -> str:

@@ -11,7 +11,8 @@ from ..registry_gate import api_key_missing_result
 from ..db import repository as repo
 from ..extraction import content_hash
 from ..http import get
-from ..models import CollectionContext, CollectorResult
+from ..models import CollectionContext, CollectorResult, collector_result
+from ..outcomes import OutcomeReason
 from ..status import CollectionStatus
 from ..universe.entity import search_name
 from .base import Collector
@@ -132,8 +133,29 @@ class ProductServiceCollector(Collector):
                 )
             )
         inserted = repo.insert_evidence(conn, rows)
-        status = CollectionStatus.SUCCESS if inserted else CollectionStatus.NO_RESULTS
-        return CollectorResult(status, evidence_count=inserted, api_calls=1)
+        if not results:
+            return collector_result(
+                CollectionStatus.NO_RESULTS,
+                outcome_reason=OutcomeReason.SOURCE_EMPTY,
+                message="no organic results from SerpAPI",
+                api_calls=1,
+            )
+        if inserted:
+            return collector_result(
+                CollectionStatus.SUCCESS,
+                evidence_count=inserted,
+                api_calls=1,
+                source_hits=len(results),
+                candidates_after_filter=inserted,
+            )
+        return collector_result(
+            CollectionStatus.NO_RESULTS,
+            outcome_reason=OutcomeReason.FILTERED_TO_ZERO,
+            message="organic results present; none matched AI product filter",
+            api_calls=1,
+            source_hits=len(results),
+            candidates_after_filter=0,
+        )
 
 
 class HiringCollector(Collector):
@@ -175,5 +197,25 @@ class HiringCollector(Collector):
                 conn, run_id=ctx.run_id, ticker=ticker,
                 name="hiring_linkedin_postings", value=float(linkedin), source=self.name,
             )
-        status = CollectionStatus.SUCCESS if inserted else CollectionStatus.NO_RESULTS
-        return CollectorResult(status, evidence_count=inserted, api_calls=api_calls)
+            return collector_result(
+                CollectionStatus.SUCCESS,
+                evidence_count=inserted,
+                api_calls=api_calls,
+                source_hits=len(jobs_results),
+                candidates_after_filter=inserted,
+            )
+        if not jobs_results:
+            return collector_result(
+                CollectionStatus.NO_RESULTS,
+                outcome_reason=OutcomeReason.SOURCE_EMPTY,
+                message="Google Jobs returned no listings",
+                api_calls=api_calls,
+            )
+        return collector_result(
+            CollectionStatus.NO_RESULTS,
+            outcome_reason=OutcomeReason.FILTERED_TO_ZERO,
+            message="job listings present but none produced valid evidence",
+            api_calls=api_calls,
+            source_hits=len(jobs_results),
+            candidates_after_filter=0,
+        )

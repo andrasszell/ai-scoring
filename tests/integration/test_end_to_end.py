@@ -10,8 +10,10 @@ from pathlib import Path
 from evidence_collection.collectors.base import Collector
 from evidence_collection.db import repository as repo
 from evidence_collection.extraction import candidate_paragraphs
+from evidence_collection.models import collector_result
 from evidence_collection.sources import Reliability, SourceCategory
-from inference.scoring import compute_scores
+from evidence_collection.status import CollectionStatus
+from inference.scoring import FORMULA_VERSION, compute_scores
 
 FIXTURE = Path(__file__).parent.parent / "fixtures" / "sample_filing.txt"
 
@@ -43,6 +45,23 @@ def test_raw_to_score_with_explanation(conn):
             for c in candidates]
     repo.insert_evidence(conn, rows)
 
+    run_id = repo.start_run(conn, "test", {"ticker": "TEST"})
+    repo.record_status(
+        conn,
+        run_id=run_id,
+        ticker="TEST",
+        source_type="sec_annual_filing",
+        collector_name="sec_filings",
+        collector_version="1.0.0",
+        result=collector_result(
+            CollectionStatus.SUCCESS,
+            evidence_count=len(rows),
+            source_hits=1,
+            candidates_after_filter=len(rows),
+        ),
+        duration_seconds=0.01,
+    )
+
     stored = conn.execute("SELECT * FROM evidence_items WHERE ticker='TEST'").fetchall()
     assert stored, "evidence must be persisted"
     first = dict(stored[0])
@@ -60,6 +79,9 @@ def test_raw_to_score_with_explanation(conn):
     scores = compute_scores(conn)
     assert [s["ticker"] for s in scores] == ["TEST"]
     score = scores[0]
+    assert score["formula_version"] == FORMULA_VERSION
     assert score["ai_depth_score"] > 0
     assert "sec_filings_component" in score  # explainable driver
     assert score["sec_filings_component"] > 0
+    # v0_2: sole measured pillar receives full weight redistribution.
+    assert score["sec_filings_component"] == score["ai_depth_score"]

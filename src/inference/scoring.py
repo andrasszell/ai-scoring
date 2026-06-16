@@ -4,6 +4,10 @@ import json
 import sqlite3
 from dataclasses import dataclass, field
 
+from evidence_collection.db import repository as repo
+from evidence_collection.outcomes import OutcomeReason, parse_outcome_reason
+from evidence_collection.status import CollectionStatus
+
 # MVP heuristic carried over from the prototype. It derives signal *counts* from
 # the evidence corpus (evidence_items) and produces a versioned, explainable score.
 #
@@ -18,7 +22,7 @@ from dataclasses import dataclass, field
 # evidence count acts as one signal, and `input_evidence_ids` records the evidence
 # rows that fed the score (a stand-in for `input_signal_ids`).
 
-FORMULA_VERSION = "ai_adoption_score_v0_1"
+FORMULA_VERSION = "ai_adoption_score_v0_2"
 SCORE_TYPE = "ai_adoption_depth"
 
 WEIGHTS = {
@@ -38,6 +42,19 @@ CAPS = {
     "patents": 10,
     "research": 5,
 }
+
+EXCLUDE_PILLAR_STATUSES = frozenset(
+    {
+        CollectionStatus.API_KEY_MISSING,
+        CollectionStatus.SKIPPED,
+        CollectionStatus.SOURCE_UNAVAILABLE,
+        CollectionStatus.RATE_LIMITED,
+        CollectionStatus.PARSE_FAILED,
+        CollectionStatus.API_LIMIT_REACHED,
+        CollectionStatus.COMPANY_NOT_FOUND,
+        CollectionStatus.AMBIGUOUS_COMPANY,
+    }
+)
 
 
 @dataclass
@@ -82,33 +99,97 @@ def _evidence_counts(conn: sqlite3.Connection, ticker: str) -> dict[str, int]:
     return {r["collector_name"]: r["n"] for r in rows}
 
 
-def _input_evidence_ids(conn: sqlite3.Connection, ticker: str) -> list[int]:
+def _input_evidence_ids(
+    conn: sqlite3.Connection, ticker: str, measured_collectors: frozenset[str] | None = None
+) -> list[int]:
+    collectors = measured_collectors if measured_collectors is not None else frozenset(WEIGHTS)
+    if not collectors:
+        return []
     rows = conn.execute(
         "SELECT id FROM evidence_items WHERE ticker=? AND collector_name IN (%s) ORDER BY id"
-        % ",".join("?" for _ in WEIGHTS),
-        [ticker, *WEIGHTS.keys()],
+        % ",".join("?" for _ in collectors),
+        [ticker, *sorted(collectors)],
     )
     return [int(r["id"]) for r in rows]
 
 
+def _latest_status_by_collector(conn: sqlite3.Connection, ticker: str) -> dict[str, dict]:
+    return {r["collector_name"]: r for r in repo.status_summary(conn, [ticker])}
+
+
+def _pillar_measured(status_row: dict | None, evidence_count: int) -> tuple[bool, str | None]:
+    """Return whether a pillar was measured and an exclusion reason when not."""
+    if status_row is None:
+        if evidence_count > 0:
+            return True, None
+        return False, "never_collected"
+    status = status_row["status"]
+    if status in EXCLUDE_PILLAR_STATUSES:
+        return False, status
+    if status in (CollectionStatus.SUCCESS, CollectionStatus.NO_RESULTS):
+        return True, None
+    return False, status
+
+
 def score_company(conn: sqlite3.Connection, ticker: str, company_name=None, sector=None) -> ScoreResult:
     counts = _evidence_counts(conn, ticker)
-    total = 0.0
-    components: dict[str, float] = {}
+    statuses = _latest_status_by_collector(conn, ticker)
+    measured: dict[str, float] = {}
     explanation: dict[str, dict] = {}
+
     for name, weight in WEIGHTS.items():
         count = counts.get(name, 0)
-        ratio = _cap_score(count, CAPS[name])
-        points = round(ratio * weight, 2)
-        components[name] = points
+        status_row = statuses.get(name)
+        is_measured, exclusion = _pillar_measured(status_row, count)
+        outcome_reason = (
+            parse_outcome_reason(status_row.get("message")) if status_row else None
+        )
+        if not is_measured:
+            explanation[name] = {
+                "excluded": True,
+                "status": status_row["status"] if status_row else None,
+                "reason": exclusion,
+                "evidence_count": count,
+                "weight": weight,
+                "points": 0.0,
+            }
+            continue
+        measured[name] = weight
+        low_confidence = outcome_reason == OutcomeReason.FILTERED_TO_ZERO
         explanation[name] = {
+            "excluded": False,
             "evidence_count": count,
             "cap": CAPS[name],
             "weight": weight,
-            "capped_ratio": round(ratio, 4),
-            "points": points,
+            "status": status_row["status"] if status_row else None,
+            "outcome_reason": outcome_reason,
+            "low_confidence": low_confidence,
         }
+
+    measured_weight_total = sum(measured.values()) or 1.0
+    total = 0.0
+    components: dict[str, float] = {}
+    for name, weight in WEIGHTS.items():
+        if name not in measured:
+            components[name] = 0.0
+            continue
+        count = counts.get(name, 0)
+        effective_weight = weight * (100.0 / measured_weight_total)
+        ratio = _cap_score(count, CAPS[name])
+        points = round(ratio * effective_weight, 2)
+        components[name] = points
+        explanation[name]["effective_weight"] = round(effective_weight, 2)
+        explanation[name]["capped_ratio"] = round(ratio, 4)
+        explanation[name]["points"] = points
         total += points
+
+    explanation["_meta"] = {
+        "measured_pillars": sorted(measured.keys()),
+        "excluded_pillars": sorted(n for n in WEIGHTS if n not in measured),
+        "measured_weight_total": measured_weight_total,
+        "input_evidence_collectors": sorted(measured.keys()),
+    }
+    measured_names = frozenset(measured.keys())
     return ScoreResult(
         ticker=ticker,
         company_name=company_name,
@@ -116,7 +197,7 @@ def score_company(conn: sqlite3.Connection, ticker: str, company_name=None, sect
         score_value=round(total, 2),
         components=components,
         explanation=explanation,
-        input_evidence_ids=_input_evidence_ids(conn, ticker),
+        input_evidence_ids=_input_evidence_ids(conn, ticker, measured_names),
     )
 
 

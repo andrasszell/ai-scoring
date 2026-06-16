@@ -2,6 +2,42 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Block F audit cleanup
+
+- Docs synced: `data-sources.md`, `scoring-methodology.md` v0_2 worked example,
+  `implementation-plan.md` Team 2 tracker.
+- `input_evidence_ids` lists measured-pillar evidence only; runner logs
+  `storage_message()`; CLI outcome label fixed.
+- `http.http_error_status()` for structured 429/rate-limit detection in research.
+- Tests: sec/earnings/patents outcome paths, research rate_limited, v0_2 regression,
+  E2E status-aware scoring.
+
+## 2026-06-16 — Block F: collection outcome semantics (implemented)
+
+- **`outcomes.py`** — controlled `reason:` vocabulary (`source_empty`, `filtered_to_zero`,
+  `partial_success`); parse/format helpers.
+- **`CollectorResult`** — `source_hits`, `candidates_after_filter`, `outcome_reason`;
+  migration 0004 adds counters to `collector_status`.
+- **All Phase 1 collectors** emit reason codes on `no_results` paths; success rows carry hit counts.
+- **CLI:** `status` shows HITS + REASON; `validate` shows outcome breakdown;
+  `validate-company` shows parsed reason per source.
+- **Inference:** `ai_adoption_score_v0_2` excludes unmeasured/failed pillars and
+  redistributes weights; flags `filtered_to_zero` as low confidence.
+- **QA:** `docs/qa/outcome-semantics-validation.md`.
+- Test suite: 150 tests.
+
+## 2026-06-16 — Post Phase 1 plan: collection outcome semantics (Block F)
+
+- **Problem:** `no_results` conflates “source empty” vs “filtered to zero” vs failures;
+  scoring must not treat all as “company has no AI.”
+- **New plan:** [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)
+  — controlled `outcome_reason` codes (`source_empty`, `filtered_to_zero`), hit counters,
+  collector updates (F.2–F.3), CLI (F.4), inference guardrails (F.5).
+- **Docs synced:** `data-collection-initial-plan.md` §12, `data-sources.md`,
+  `scoring-methodology.md`, `implementation-plan.md`, `phase-1-development-plan.md` Block F,
+  `project-control.md`.
+- **Status:** F.1 documentation complete; implementation not started.
+
 ## 2026-06-16 — Block D audit fixes
 
 - **`collect --validation-set`** rejects conflicting `--ticker` / `--all` / `--limit`.

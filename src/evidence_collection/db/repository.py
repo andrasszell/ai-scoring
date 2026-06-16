@@ -298,12 +298,14 @@ def record_status(conn, *, run_id, ticker, source_type, collector_name,
         """
         INSERT INTO collector_status(
             run_id, ticker, source_type, collector_name, collector_version,
-            status, message, evidence_count, documents_count, api_calls, duration_seconds
-        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            status, message, evidence_count, documents_count, api_calls,
+            source_hits, candidates_after_filter, duration_seconds
+        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (run_id, ticker, source_type, collector_name, collector_version,
-         result.status, result.message, result.evidence_count,
-         result.documents_count, result.api_calls, duration_seconds),
+         result.status, result.storage_message(), result.evidence_count,
+         result.documents_count, result.api_calls, result.source_hits,
+         result.candidates_after_filter, duration_seconds),
     )
     conn.commit()
 
@@ -347,6 +349,37 @@ def quality_report(conn) -> dict:
         )
     ]
     companies_with_evidence = scalar("SELECT COUNT(DISTINCT ticker) FROM evidence_items")
+    latest_status = """
+        SELECT status, message FROM collector_status
+        WHERE id IN (SELECT MAX(id) FROM collector_status GROUP BY ticker, source_type)
+    """
+    outcome_breakdown = [
+        dict(r)
+        for r in conn.execute(
+            f"""
+            SELECT
+              CASE
+                WHEN message LIKE 'reason:source_empty%' THEN 'source_empty'
+                WHEN message LIKE 'reason:filtered_to_zero%' THEN 'filtered_to_zero'
+                WHEN message LIKE 'reason:partial_success%' THEN 'partial_success'
+                ELSE NULL
+              END AS outcome_reason,
+              status,
+              COUNT(*) AS runs
+            FROM ({latest_status})
+            WHERE status IN ('success', 'no_results')
+            GROUP BY outcome_reason, status
+            ORDER BY outcome_reason, status
+            """
+        )
+    ]
+    missing_outcome_reason = scalar(
+        f"""
+        SELECT COUNT(*) FROM ({latest_status})
+        WHERE status = 'no_results'
+          AND (message IS NULL OR message NOT LIKE 'reason:%')
+        """
+    )
     return {
         "total_evidence": total,
         "companies_with_evidence": companies_with_evidence,
@@ -355,8 +388,10 @@ def quality_report(conn) -> dict:
             "missing_raw_hash": missing_hash,
             "missing_source_category": missing_category,
             "duplicate_raw_hash_rows": dup_rows,
+            "missing_outcome_reason": missing_outcome_reason,
         },
         "coverage": coverage,
+        "outcome_breakdown": outcome_breakdown,
     }
 
 
@@ -364,7 +399,8 @@ def status_summary(conn, tickers: list[str] | None = None) -> list[dict]:
     """Latest status per (ticker, source_type)."""
     sql = """
         SELECT ticker, source_type, collector_name, collector_version, status, message,
-               evidence_count, documents_count, api_calls, created_at
+               evidence_count, documents_count, api_calls, source_hits,
+               candidates_after_filter, created_at
         FROM collector_status s
         WHERE id IN (
             SELECT MAX(id) FROM collector_status GROUP BY ticker, source_type

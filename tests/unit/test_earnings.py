@@ -8,6 +8,7 @@ from evidence_collection.config import settings
 from evidence_collection.dates import DATE_PROVENANCE_ORIGIN, DATE_PROVENANCE_QUARTER_ANCHOR
 from evidence_collection.db import repository as repo
 from evidence_collection.models import CollectionContext
+from evidence_collection.outcomes import OutcomeReason
 from evidence_collection.status import CollectionStatus
 
 COMPANY = {"ticker": "MSFT", "company_name": "Microsoft Corporation", "company_id": "MSFT"}
@@ -66,7 +67,7 @@ def test_earnings_no_results_when_fmp_returns_empty(conn, monkeypatch, tmp_path)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.NO_RESULTS
-    assert result.message == "no_transcripts"
+    assert result.outcome_reason == OutcomeReason.SOURCE_EMPTY
     assert result.evidence_count == 0
 
 
@@ -86,7 +87,7 @@ def test_earnings_skips_empty_transcript_content(conn, monkeypatch, tmp_path):
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.NO_RESULTS
-    assert result.message == "no_transcripts"
+    assert result.outcome_reason == OutcomeReason.SOURCE_EMPTY
 
 
 def test_earnings_continues_after_fetch_error(conn, monkeypatch, tmp_path):

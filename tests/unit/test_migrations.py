@@ -8,9 +8,11 @@ def test_migrations_apply_and_are_idempotent(tmp_path):
     latest = max(v for v, _, _ in MIGRATIONS)
     assert current_version(c) == latest
     assert applied == [v for v, _, _ in MIGRATIONS]
-    # Re-running applies nothing new.
     assert apply_migrations(c) == []
     assert current_version(c) == latest
+    cols = {r["name"] for r in c.execute("PRAGMA table_info(collector_status)")}
+    assert "source_hits" in cols
+    assert "candidates_after_filter" in cols
     c.close()
 
 

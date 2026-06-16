@@ -6,7 +6,8 @@ This is the top-level control document referenced by the Coding Standards (§13)
 | Document | Role |
 |---|---|
 | [`phase-1-development-plan.md`](phase-1-development-plan.md) | **Step-by-step Phase 1 checklist** (implement in order) |
-| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = platforms**, **§6A.4 = registry** |
+| [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md) | **Block F** — source empty vs filtered-to-zero vs failure |
+| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = platforms**, **§6A.4 = registry**, **§12 = status** |
 | [`implementation-plan.md`](implementation-plan.md) | Current progress; Phase 1 task checklist |
 | [`project-control.md`](project-control.md) | Scope, non-goals, architecture decisions |
 | [`data-sources.md`](data-sources.md) | Operational detail; synced from registry (Phase 1) |

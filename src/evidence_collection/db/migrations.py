@@ -162,10 +162,17 @@ CREATE TABLE IF NOT EXISTS scores (
 CREATE INDEX IF NOT EXISTS idx_scores_ticker ON scores(ticker);
 """
 
+# Block F: collection outcome counters on collector_status.
+_MIGRATION_0004 = """
+ALTER TABLE collector_status ADD COLUMN source_hits INTEGER DEFAULT 0;
+ALTER TABLE collector_status ADD COLUMN candidates_after_filter INTEGER DEFAULT 0;
+"""
+
 MIGRATIONS: list[tuple[int, str, str]] = [
     (1, "initial_evidence_schema", _MIGRATION_0001),
     (2, "evidence_source_quality_fields", _MIGRATION_0002),
     (3, "scores_table", _MIGRATION_0003),
+    (4, "collector_status_outcome_counters", _MIGRATION_0004),
 ]
 
 

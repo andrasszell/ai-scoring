@@ -7,7 +7,8 @@ from ..config import settings
 from ..db import repository as repo
 from ..extraction import content_hash
 from ..http import get
-from ..models import CollectionContext, CollectorResult
+from ..models import CollectionContext, CollectorResult, collector_result
+from ..outcomes import OutcomeReason
 from ..status import CollectionStatus
 from ..universe.entity import clean_company_name
 from .base import Collector
@@ -86,5 +87,27 @@ class PatentsCollector(Collector):
             conn, run_id=ctx.run_id, ticker=ticker,
             name="patent_total_hits", value=float(total_hits), source=self.name,
         )
-        status = CollectionStatus.SUCCESS if inserted else CollectionStatus.NO_RESULTS
-        return CollectorResult(status, evidence_count=inserted, api_calls=1)
+        hits = int(total_hits or 0)
+        if hits == 0:
+            return collector_result(
+                CollectionStatus.NO_RESULTS,
+                outcome_reason=OutcomeReason.SOURCE_EMPTY,
+                message="PatentsView total_hits is zero",
+                api_calls=1,
+            )
+        if inserted:
+            return collector_result(
+                CollectionStatus.SUCCESS,
+                evidence_count=inserted,
+                api_calls=1,
+                source_hits=hits,
+                candidates_after_filter=inserted,
+            )
+        return collector_result(
+            CollectionStatus.NO_RESULTS,
+            outcome_reason=OutcomeReason.FILTERED_TO_ZERO,
+            message="patent hits returned but none inserted",
+            api_calls=1,
+            source_hits=hits,
+            candidates_after_filter=0,
+        )

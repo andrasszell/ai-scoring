@@ -61,7 +61,7 @@ def run_collection(
             logger.info(
                 "%s %s -> %s (%d evidence, %.2fs)%s",
                 ticker, collector.name, result.status, result.evidence_count, duration,
-                f" — {result.message}" if result.message else "",
+                f" — {result.storage_message()}" if result.storage_message() else "",
             )
 
     runtime = round(time.time() - run_started, 2)

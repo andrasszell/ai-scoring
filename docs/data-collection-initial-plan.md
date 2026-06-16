@@ -658,6 +658,33 @@ The inference team needs to know whether no evidence was found because:
 * the API key was missing
 * the company identifier was ambiguous
 
+### Outcome semantics (post Phase 1 — required)
+
+Phase 1 collectors often collapse different situations into `no_results`. That is
+not sufficient for scoring or QA. Every run must distinguish:
+
+| Class | Meaning | Example |
+|---|---|---|
+| **Not attempted** | Collector did not run | `api_key_missing`, `skipped` |
+| **Attempt failed** | Outcome **unknown** | `source_unavailable`, `rate_limited` |
+| **Source empty** | API succeeded; origin had nothing for this query | Google Jobs `jobs_results: []` |
+| **Filtered to zero** | Origin had material; **zero evidence rows** after extraction/filter | 10-K stored, no AI keyword paragraphs |
+
+**Rule:** only **source empty** is weak evidence of “no signal in this channel.”
+**Filtered to zero** means the pipeline or query may have missed signal — not proof
+of absence. **Attempt failed** and **not attempted** must never be scored as zero.
+
+**Implementation:** controlled `outcome_reason` codes (`source_empty`,
+`filtered_to_zero`, …) plus counters (`documents_count`, `source_hits`,
+`candidates_after_filter`). Full step-by-step plan:
+[`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md).
+
+**Storage (MVP):** prefix `collector_status.message` with `reason:code`; optional
+dedicated columns in a later migration.
+
+**Inference:** Team 2 excludes unknown/not-measured pillars from scoring; see
+[`scoring-methodology.md`](scoring-methodology.md).
+
 ---
 
 ## 13. Deduplication Responsibilities

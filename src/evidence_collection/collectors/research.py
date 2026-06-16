@@ -4,8 +4,9 @@ from ..dates import normalize_publication_year
 from ..config import settings
 from ..db import repository as repo
 from ..extraction import content_hash
-from ..http import get
-from ..models import CollectionContext, CollectorResult
+from ..http import get, http_error_status
+from ..models import CollectionContext, CollectorResult, collector_result
+from ..outcomes import OutcomeReason
 from ..status import CollectionStatus
 from ..universe.entity import clean_company_name
 from .base import Collector
@@ -38,7 +39,8 @@ class ResearchCollector(Collector):
             resp = get(SEMANTIC_SCHOLAR, params=params, headers=headers)
             data = resp.json()
         except Exception as exc:  # noqa: BLE001
-            status = CollectionStatus.RATE_LIMITED if "429" in str(exc) else CollectionStatus.SOURCE_UNAVAILABLE
+            code = http_error_status(exc)
+            status = CollectionStatus.RATE_LIMITED if code == 429 else CollectionStatus.SOURCE_UNAVAILABLE
             return CollectorResult(status, message=f"error: {exc}")
 
         repo.save_raw_response(
@@ -49,8 +51,9 @@ class ResearchCollector(Collector):
         )
 
         repo.delete_evidence(conn, ticker, self.name)
+        papers = data.get("data", []) or []
         rows = []
-        for p in data.get("data", []):
+        for p in papers:
             title = p.get("title") or ""
             if not title:
                 continue
@@ -71,5 +74,26 @@ class ResearchCollector(Collector):
                 )
             )
         inserted = repo.insert_evidence(conn, rows)
-        status = CollectionStatus.SUCCESS if inserted else CollectionStatus.NO_RESULTS
-        return CollectorResult(status, evidence_count=inserted, api_calls=1)
+        if not papers:
+            return collector_result(
+                CollectionStatus.NO_RESULTS,
+                outcome_reason=OutcomeReason.SOURCE_EMPTY,
+                message="Semantic Scholar returned no papers",
+                api_calls=1,
+            )
+        if inserted:
+            return collector_result(
+                CollectionStatus.SUCCESS,
+                evidence_count=inserted,
+                api_calls=1,
+                source_hits=len(papers),
+                candidates_after_filter=inserted,
+            )
+        return collector_result(
+            CollectionStatus.NO_RESULTS,
+            outcome_reason=OutcomeReason.FILTERED_TO_ZERO,
+            message="papers returned but none produced evidence rows",
+            api_calls=1,
+            source_hits=len(papers),
+            candidates_after_filter=0,
+        )

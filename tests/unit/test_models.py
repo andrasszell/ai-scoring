@@ -1,7 +1,8 @@
 import pytest
 
 from evidence_collection.collectors import REGISTRY, SOURCE_KEYS, get_collectors
-from evidence_collection.models import CollectorResult
+from evidence_collection.models import CollectorResult, collector_result
+from evidence_collection.outcomes import OutcomeReason
 from evidence_collection.status import CollectionStatus
 
 
@@ -13,6 +14,23 @@ def test_collector_result_rejects_unknown_status():
 def test_collector_result_accepts_known_status():
     r = CollectorResult(CollectionStatus.NO_RESULTS)
     assert r.status == CollectionStatus.NO_RESULTS
+
+
+def test_collector_result_storage_message_includes_reason():
+    r = collector_result(
+        CollectionStatus.NO_RESULTS,
+        outcome_reason=OutcomeReason.SOURCE_EMPTY,
+        message="no papers",
+    )
+    assert r.storage_message() == "reason:source_empty — no papers"
+
+
+def test_collector_result_rejects_outcome_reason_on_failure_status():
+    with pytest.raises(ValueError):
+        CollectorResult(
+            CollectionStatus.SOURCE_UNAVAILABLE,
+            outcome_reason=OutcomeReason.SOURCE_EMPTY,
+        )
 
 
 def test_get_collectors_defaults_to_enabled_phase1():

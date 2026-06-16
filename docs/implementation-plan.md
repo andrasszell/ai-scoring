@@ -10,6 +10,10 @@ tracks current progress only.
 **Step-by-step implementation guide:** [`phase-1-development-plan.md`](phase-1-development-plan.md)
 — use this when coding Phase 1 block-by-block.
 
+**Post Phase 1 (collection outcome semantics):**
+[`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)
+— distinguish source empty vs filtered-to-zero vs failure (Block F).
+
 ---
 
 ## Status
@@ -28,6 +32,9 @@ tracks current progress only.
   `validate-company` CLI; shared `load_universe()` on all entry points.
 - [x] **Phase 1 — Stabilize core collectors + validation sample.** Deliverable:
   high-quality evidence corpus for 25–50 companies (Blocks C–D). **35 companies, 991 evidence rows, 0 validate violations (2026-06-16).**
+- [x] **Post Phase 1 — Collection outcome semantics (Block F):** distinguish
+  `source_empty` vs `filtered_to_zero` vs failure vs not attempted; expose in
+  status/CLI; inference guardrails (`ai_adoption_score_v0_2`). **150 tests (2026-06-16).**
 - [ ] **Phase 2 — High-value sources:** add platforms via registry + new collectors.
 - [ ] **Phase 3 — Scale to full universe:** full S&P 500, API-cost tracking,
   incremental refresh, freshness monitoring, failed-source retry queue.
@@ -83,6 +90,19 @@ Edit config/platforms.yaml → collector adapter → tests → sync docs → val
 | D.3 | Capture `ai-collect status` + export bundle for Team 2 review | [x] |
 | D.4 | QA note: sample evidence accuracy per source (manual spot-check) | [x] |
 
+### 5. Post Phase 1 — collection outcome semantics (Block F)
+
+| # | Task | Done |
+|---|---|---|
+| F.1 | Document vocabulary + per-collector targets | [x] |
+| F.2 | `CollectorResult` + persistence for reason codes and hit counters | [x] |
+| F.3 | Phase 1 collectors emit `reason:source_empty` / `reason:filtered_to_zero` | [x] |
+| F.4 | `status` / `validate-company` / exports show outcome reason | [x] |
+| F.5 | Inference layer excludes unknown/not-measured pillars from scoring | [x] |
+| F.6 | Re-run validation sample + QA note | [x] |
+
+Step-by-step: [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md).
+
 ---
 
 ## Team 2 deliverables (tracked, not yet built)
@@ -90,7 +110,7 @@ Edit config/platforms.yaml → collector adapter → tests → sync docs → val
 | Item | Status |
 |---|---|
 | `signals` table + producer | Planned — interim scorer uses evidence counts |
-| Versioned scoring formula v0.2+ | Planned |
+| Versioned scoring formula v0.2+ (outcome-aware pillars) | Done — `ai_adoption_score_v0_2` |
 | Read API over evidence corpus | Phase 4 |
 
 See [`scoring-methodology.md`](scoring-methodology.md) and [`project-control.md`](project-control.md).

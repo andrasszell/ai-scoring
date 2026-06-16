@@ -83,6 +83,25 @@ For each company, each pillar runs independently. The collector:
 
 If a source is unavailable or a required API key is missing, that pillar is
 **skipped and logged** — it does not crash the run or silently inflate the score.
+The inference layer must treat skipped and failed pillars as **missing data**, not
+as a count of zero (see **How scoring treats collection outcomes** below).
+
+#### How scoring treats collection outcomes
+
+| Collection outcome | Pillar in score? | Treat count as |
+|---|---|---|
+| `success` (evidence > 0) | Yes | evidence count |
+| `no_results` + `reason:source_empty` | Yes | 0 (channel empty) |
+| `no_results` + `reason:filtered_to_zero` | Caution | 0 for MVP, but flag low confidence — signal may exist |
+| `api_key_missing`, `skipped` | **No** — exclude pillar | not measured |
+| `source_unavailable`, `rate_limited`, `parse_failed` | **No** — exclude pillar | unknown |
+
+When pillars are excluded, remaining measured pillars **share the full 100 points**
+proportionally (formula `ai_adoption_score_v0_2`). Excluded pillars appear in the
+score explanation with `"excluded": true` and contribute 0 points.
+
+If `documents_count > 0` or `source_hits > 0` with `reason:filtered_to_zero`, the
+pillar is scored as zero but flagged `"low_confidence": true` in the explanation.
 
 ### Stage 2 — Store
 
@@ -95,6 +114,14 @@ Everything lands in a local database. The key tables are:
   document, tagged with the collector name + version that produced it.
 - **collector_status** — for every company/source, whether collection succeeded,
   found nothing, or failed (and why). *Absence of evidence is not evidence of absence.*
+  Post Phase 1, each row should carry an **`outcome_reason`** when status is
+  `success` or `no_results` (see
+  [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)):
+  - `reason:source_empty` — origin had nothing (weak “no signal” in that channel)
+  - `reason:filtered_to_zero` — material fetched but zero evidence rows ( **not**
+    proof of no AI activity)
+  - Failures (`source_unavailable`, `rate_limited`) and skips (`api_key_missing`) mean
+    **unknown / not measured** — the pillar must not be scored as zero.
 
 Because evidence links to documents, **every score is traceable to a primary
 source** (e.g. an exact paragraph in a named 10-K with the SEC URL and filing date).
@@ -116,15 +143,23 @@ and **caps** (the count at which a pillar is considered "maxed out").
 
 ### Step-by-step
 
-For each pillar:
+**Formula version:** `ai_adoption_score_v0_2` (Block F — outcome-aware).
 
-1. Take the raw count (e.g. 18 AI paragraphs in the 10-K).
-2. **Cap and normalise** it to a 0–1 ratio: `min(count / cap, 1.0)`.
-   - The cap prevents a single very "chatty" source from dominating. Once a
-     company hits the cap, more mentions don't add points.
-3. Multiply by the pillar's weight (points).
+1. Read the latest `collector_status` per pillar. Pillars with `api_key_missing`,
+   `skipped`, `source_unavailable`, `rate_limited`, or `parse_failed` are
+   **excluded** (not measured). Pillars with no status row and no evidence are
+   also excluded.
+2. **Redistribute weights** across measured pillars only so the maximum score
+   remains 100.
+3. For each measured pillar, take the raw evidence count from `evidence_items`.
+4. **Cap and normalise** to a 0–1 ratio: `min(count / cap, 1.0)`.
+5. Multiply by the pillar's **effective** weight (after redistribution).
+6. Sum measured pillar contributions → AI Depth Score.
 
-Then **sum all six** pillar contributions → the AI Depth Score (max 100).
+Pillars with `no_results` + `reason:filtered_to_zero` are measured but flagged
+`low_confidence` in the score explanation (count treated as 0 for MVP).
+
+Then **sum all measured** pillar contributions → the AI Depth Score (max 100).
 
 ### Current weights and caps
 
@@ -138,21 +173,29 @@ Then **sum all six** pillar contributions → the AI Depth Score (max 100).
 | Research papers | 5 | 5 papers |
 | **Total** | **100** | |
 
-### Worked example — Microsoft (data as of June 2026)
+### Worked example — Microsoft (illustrative, formula v0_2)
 
-| Pillar | Raw count | Cap | Ratio | × Weight | Points |
-|---|---:|---:|---:|---:|---:|
-| Annual report (10-K) | 15 | 20 | 0.75 | × 25 | **18.75** |
-| Products / services | 8 | 8 | 1.00 (capped) | × 25 | **25.0** |
-| Hiring intensity (incl. 6 LinkedIn) | 10 | 8 | 1.00 (capped) | × 15 | **15.0** |
-| Research papers | 10 | 5 | 1.00 (capped) | × 5 | **5.0** |
-| Earnings / Patents | 0 | — | 0 | — | 0.0 |
-| **AI Depth Score** | | | | | **63.75** |
+Assume four **measured** pillars (SEC, products, hiring, research) and two
+**excluded** pillars (earnings — `api_key_missing`; patents — `api_key_missing`).
+Nominal weights 25 + 25 + 15 + 5 = **70** → each pillar's effective weight is
+scaled by `100 / 70`.
 
-Earnings and patents are 0 here only because we have not yet supplied those API
-keys (see limitations). Adding them would raise the score further. (Numbers will
-change as filings and data sources update — they illustrate the mechanism, not a
-fixed result.)
+| Pillar | Status | Raw count | Cap | Ratio | Nom. weight | Effective weight | Points |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Annual report (10-K) | measured | 15 | 20 | 0.75 | 25 | 35.71 | **26.79** |
+| Products / services | measured | 8 | 8 | 1.00 | 25 | 35.71 | **35.71** |
+| Hiring intensity | measured | 10 | 8 | 1.00 | 15 | 21.43 | **21.43** |
+| Research papers | measured | 10 | 5 | 1.00 | 5 | 7.14 | **7.14** |
+| Earnings calls | excluded | — | — | — | 20 | — | 0.0 |
+| Patents | excluded | — | — | — | 10 | — | 0.0 |
+| **AI Depth Score** | | | | | | | **91.07** |
+
+Excluded pillars contribute **0 points** and do **not** shrink the denominator —
+measured pillars share the full 100. `input_evidence_ids` on the score row lists
+only evidence from measured pillars.
+
+Numbers are illustrative; live counts and exclusion sets come from
+`collector_status` + `evidence_items`.
 
 ---
 
@@ -195,6 +238,7 @@ To set expectations clearly:
 | Area | Limitation | Impact |
 |---|---|---|
 | **Coverage** | 10-K, products, and hiring are active; earnings, patents, and (reliable) research still need API keys not yet provisioned | Those pillars currently read 0, understating scores |
+| **Outcome semantics** | Bare `no_results` does not distinguish source empty vs filtered-to-zero (Block F planned) | Misleading zeros until `reason:` codes ship |
 | **Brand vs legal name** | Web/job sources index employers by brand, not legal name (e.g. Alphabet→Google); handled via a small alias map | Some companies miss a pillar (e.g. Google's own postings don't appear in Google Jobs) |
 | **Hiring signal** | Uses Google Jobs postings (incl. LinkedIn) but counts are page-limited and not deduplicated | Reasonable proxy; not a true headcount/role-share measure |
 | **Patents/research matching** | Name-based, no subsidiary/legal-entity mapping | Both false positives and misses |
