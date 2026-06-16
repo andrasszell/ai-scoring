@@ -1,0 +1,28 @@
+# Environment
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Project data (collected artifacts and DB are reproducible)
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/raw/
+data/exports/
+data/*.csv
+data/*.jsonl
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

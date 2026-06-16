@@ -1,0 +1,683 @@
+# White Paper Plan
+
+## AI Adoption Intelligence: A Probabilistic Framework for Measuring Corporate AI Depth
+
+---
+
+## 1. Executive Thesis
+
+### Purpose of this section
+
+Open with a clear, ambitious claim.
+
+### Core message
+
+AI adoption is becoming one of the most important hidden variables in company performance, but it is poorly measured. Current approaches over-rely on keyword counts, press releases, surveys, and marketing language. This white paper proposes a mathematical and evidence-grounded framework for estimating the depth of AI adoption inside companies using publicly observable signals.
+
+### Key points
+
+* AI depth is not directly observable.
+* Public evidence is noisy, incomplete, duplicated, and strategically shaped.
+* The right framing is not simple counting, but probabilistic inference.
+* The platform estimates latent AI maturity from multiple evidence streams.
+* The output is not only a score, but a score with uncertainty, evidence, and explanation.
+
+### Desired reader reaction
+
+“This is not a dashboard. This is an intelligence methodology.”
+
+---
+
+## 2. The Measurement Problem
+
+### Purpose of this section
+
+Explain why measuring AI adoption is hard.
+
+### Core message
+
+The central challenge is that companies generate many AI-related signals, but those signals do not directly reveal actual AI integration.
+
+### Problems to define
+
+* AI marketing is not AI adoption.
+* AI experimentation is not operational dependence.
+* AI product announcements are not necessarily AI-native capability.
+* Large companies naturally produce more evidence than small companies.
+* Some companies disclose heavily; others are silent.
+* Public evidence is duplicated across press releases, media articles, job posts, and investor materials.
+* Sector language differs significantly.
+
+### Important distinction
+
+The platform must distinguish between:
+
+* AI publicity
+* AI awareness
+* AI experimentation
+* AI workflow adoption
+* AI operational integration
+* AI productization
+* AI-native capability
+* AI-first business models
+
+### Mathematical framing
+
+The observed data is not the target. The target is a latent state.
+
+```text
+Observed Evidence ≠ AI Depth
+
+Observed Evidence → Inference Process → Estimated AI Depth
+```
+
+---
+
+## 3. The Latent Variable Framework
+
+### Purpose of this section
+
+Introduce the mathematical foundation.
+
+### Core message
+
+AI adoption should be modeled as a hidden state vector.
+
+### Proposed state vector
+
+```text
+AI_State = [
+    Awareness,
+    Usage,
+    Integration,
+    Productization,
+    Operations,
+    Research
+]
+```
+
+### Define each dimension
+
+#### Awareness
+
+Does the company understand AI strategically?
+
+#### Usage
+
+Are employees using AI tools?
+
+#### Integration
+
+Is AI embedded into workflows?
+
+#### Productization
+
+Does the company sell or expose AI-powered products?
+
+#### Operations
+
+Do internal business processes depend on AI?
+
+#### Research
+
+Is the company creating proprietary AI capability?
+
+### Core inference equation
+
+```text
+P(AI_State | Evidence)
+```
+
+### Why this matters
+
+This structure lets the system distinguish a company that talks about AI from one that depends on AI.
+
+---
+
+## 4. Evidence Universe
+
+### Purpose of this section
+
+Describe the public evidence landscape.
+
+### Core message
+
+The platform collects heterogeneous evidence from multiple public sources, each with different credibility, bias, and signal type.
+
+### Evidence sources
+
+* SEC filings and annual reports
+* Earnings calls
+* Product and service pages
+* Product documentation
+* Technical blogs
+* Job postings
+* Patents
+* Research papers
+* GitHub repositories
+* Press releases
+* Case studies
+* Partner announcements
+* Developer documentation
+* AI governance documents
+
+### For each source, define
+
+* What it reveals
+* What it does not reveal
+* Typical bias
+* Credibility level
+* Associated AI dimensions
+
+### Example
+
+Job postings are strong evidence of investment, but weak evidence of actual deployment unless combined with product, technical, or operational evidence.
+
+---
+
+## 5. Evidence Ingestion and Normalization Pipeline
+
+### Purpose of this section
+
+Explain the data process from raw sources to structured evidence.
+
+### Pipeline
+
+```text
+Company Universe
+    ↓
+Source Collection
+    ↓
+Document Storage
+    ↓
+Text Extraction
+    ↓
+Candidate Evidence Retrieval
+    ↓
+Evidence Classification
+    ↓
+Source Credibility Weighting
+    ↓
+Novelty Deduplication
+    ↓
+Latent Dimension Scoring
+    ↓
+Uncertainty Estimation
+    ↓
+Final AI Depth Score
+```
+
+### Key engineering principles
+
+* Every score must be traceable to evidence.
+* Raw documents and extracted evidence should be stored separately.
+* Collection, scoring, and audit should be decoupled.
+* The system must support re-scoring when models or weights improve.
+* Evidence should be timestamped.
+* Scores should be reproducible.
+
+### Data objects
+
+#### Company
+
+Ticker, name, sector, industry, CIK, aliases, subsidiaries.
+
+#### Document
+
+Source type, URL, filing date, title, raw path.
+
+#### Evidence item
+
+Text snippet, source, date, pillar, confidence, metadata.
+
+#### Evidence assessment
+
+Dimension scores, credibility, novelty, marketing risk, explanation.
+
+#### Company score
+
+Dimension scores, final score, uncertainty, classification, evidence coverage.
+
+---
+
+## 6. Evidence Classification Layer
+
+### Purpose of this section
+
+Show how AI assistance enters the system intelligently.
+
+### Core message
+
+LLMs should not simply generate final scores. They should classify evidence into structured, auditable intermediate variables.
+
+### Classification task
+
+For each evidence item, estimate:
+
+```json
+{
+  "awareness": 0.0,
+  "usage": 0.0,
+  "integration": 0.0,
+  "productization": 0.0,
+  "operations": 0.0,
+  "research": 0.0,
+  "confidence": 0.0,
+  "marketing_risk": 0.0,
+  "evidence_strength": 0.0,
+  "explanation": ""
+}
+```
+
+### Important design principle
+
+The LLM is not the scoring system. The LLM is an evidence parser and semantic classifier.
+
+### Why this is important
+
+This preserves interpretability, allows model replacement, supports audits, and prevents black-box scoring.
+
+---
+
+## 7. Source Credibility Model
+
+### Purpose of this section
+
+Introduce a formal reliability model.
+
+### Core message
+
+Different evidence sources have different signal value.
+
+### Example credibility hierarchy
+
+* Patents: high credibility for research and proprietary capability
+* Research papers: high credibility for technical depth
+* Technical documentation: high credibility for productization
+* GitHub: high credibility for engineering behavior
+* Earnings calls: medium-high credibility for strategic intent
+* Job postings: medium credibility for investment direction
+* Company blogs: medium credibility
+* Marketing pages: low-to-medium credibility
+* Press releases: low-to-medium credibility unless corroborated
+
+### Proposed scoring modifiers
+
+```text
+effective_signal =
+raw_evidence_strength
+× source_credibility
+× recency_weight
+× novelty_weight
+× specificity_weight
+× confidence
+```
+
+### Important insight
+
+A single highly specific technical document can be more valuable than 50 generic AI marketing mentions.
+
+---
+
+## 8. Novelty and Duplication Control
+
+### Purpose of this section
+
+Address a major weakness of naive evidence counting.
+
+### Core message
+
+The system should score unique claims, not repeated mentions.
+
+### Problem
+
+One product launch can produce:
+
+* a press release
+* several blog posts
+* many news articles
+* investor references
+* job posts
+* partner pages
+
+Without deduplication, the system overestimates AI depth.
+
+### Solution
+
+Cluster evidence by semantic similarity.
+
+### Claim-level representation
+
+```text
+canonical_claim
+source_count
+source_diversity
+first_seen_date
+last_seen_date
+novelty_cluster_id
+```
+
+### Scoring rule
+
+Repeated evidence should increase confidence slightly, but should not multiply the adoption score linearly.
+
+---
+
+## 9. Mathematical Scoring Framework
+
+### Purpose of this section
+
+Present the core quantitative model.
+
+### Core message
+
+The final score is a weighted function of latent dimension estimates, adjusted for confidence and uncertainty.
+
+### Dimension score
+
+For each company and each dimension:
+
+```text
+DimensionScore_d =
+Aggregate(
+    evidence_strength
+    × source_credibility
+    × recency_weight
+    × novelty_weight
+    × confidence
+)
+```
+
+### Final score
+
+```text
+AI_SCORE =
+w1 × Awareness
++ w2 × Usage
++ w3 × Integration
++ w4 × Productization
++ w5 × Operations
++ w6 × Research
+```
+
+### Suggested baseline weights
+
+```text
+Awareness:        10%
+Usage:            15%
+Integration:      25%
+Productization:   20%
+Operations:       20%
+Research:         10%
+```
+
+### Important qualification
+
+Weights should be sector-adjusted.
+
+For software companies, productization and research may matter more.
+
+For industrial companies, operations and integration may matter more.
+
+For banks, governance, automation, risk modeling, and internal workflow integration may matter more.
+
+---
+
+## 10. Uncertainty Estimation
+
+### Purpose of this section
+
+Make the score scientifically honest.
+
+### Core message
+
+The platform should never output only a point estimate. It should output a score with uncertainty.
+
+### Example
+
+```text
+AI Depth Score: 72 ± 8
+```
+
+### Sources of uncertainty
+
+* Sparse evidence
+* Low source credibility
+* High marketing risk
+* Old evidence
+* Conflicting evidence
+* Sector disclosure differences
+* Heavy duplication
+* Weak source diversity
+
+### Confidence increases when
+
+* Multiple independent source types agree
+* Evidence is recent
+* Evidence is specific
+* Evidence is technical or operational
+* Evidence maps consistently to several dimensions
+
+### Confidence decreases when
+
+* Evidence is generic
+* Evidence is purely promotional
+* Evidence appears only once
+* Evidence is only keyword-based
+* Evidence is not operationally specific
+
+---
+
+## 11. Sector Normalization
+
+### Purpose of this section
+
+Prevent unfair cross-sector comparisons.
+
+### Core message
+
+AI depth should be interpreted relative to sector context.
+
+### Why sector normalization matters
+
+A bank, pharmaceutical company, semiconductor company, retailer, and software company will expose AI adoption differently.
+
+### Proposed outputs
+
+* Raw AI Depth Score
+* Sector-adjusted percentile
+* Sector-relative dimension scores
+* Evidence coverage percentile
+* Disclosure intensity score
+
+### Example
+
+```text
+Company A
+Raw AI Score: 61
+Sector Percentile: 88th
+Classification: AI Integrated
+Evidence Coverage: Medium
+Uncertainty: ±10
+```
+
+---
+
+## 12. Classification System
+
+### Purpose of this section
+
+Translate scores into intuitive categories.
+
+### Proposed classes
+
+```text
+0–20    AI Minimal
+20–40   AI Exploratory
+40–60   AI Adopting
+60–80   AI Integrated
+80–90   AI-Native Operations
+90–100  AI-First
+```
+
+### Important note
+
+Classification should depend not only on total score, but also on dimension pattern.
+
+### Example
+
+A company with high awareness and high productization but low operations may be an “AI marketer/product experimenter,” not truly AI-integrated.
+
+---
+
+## 13. Evidence Cards and Auditability
+
+### Purpose of this section
+
+Show that the platform is explainable.
+
+### Core message
+
+Every company score should be supported by a human-readable evidence card.
+
+### Evidence card should include
+
+* Final score
+* Uncertainty
+* Classification
+* Dimension breakdown
+* Top supporting evidence
+* Contradictory or weak evidence
+* Source diversity
+* Marketing risk
+* Disclosure intensity
+* Last updated date
+
+### Example output
+
+```text
+Company: Example Corp
+AI Depth Score: 74 ± 7
+Classification: AI Integrated
+
+Strongest dimensions:
+- Productization
+- Integration
+- Operations
+
+Weakest dimension:
+- Research
+
+Top evidence:
+1. Product documentation showing AI assistant embedded into workflow.
+2. Earnings-call discussion of AI-driven operational savings.
+3. Hiring pattern showing MLOps and AI platform roles.
+4. Patent activity in machine-learning optimization.
+```
+
+---
+
+## 14. Validation Strategy
+
+### Purpose of this section
+
+Explain how the score will be tested.
+
+### Core message
+
+The methodology must be validated against known company archetypes.
+
+### Validation sets
+
+Create labeled examples of:
+
+* AI marketing-heavy companies
+* AI experimenters
+* AI adopters
+* AI-integrated companies
+* AI-native companies
+* AI-first companies
+
+### Validation methods
+
+* Expert review
+* Pairwise company comparison
+* Sector benchmark testing
+* Historical backtesting
+* Score stability analysis
+* Sensitivity analysis
+* Evidence ablation tests
+
+### Example ablation test
+
+Remove patents and research papers. Does the company still look AI-native?
+
+Remove marketing pages. Does the score collapse?
+
+Remove job postings. Does the operational signal remain?
+
+---
+
+## 15. MVP Execution Plan
+
+### Purpose of this section
+
+Connect the white paper to implementation.
+
+### MVP version
+
+The first executable version should include:
+
+```text
+Documents
+    ↓
+LLM Evidence Extraction
+    ↓
+Credibility Weighting
+    ↓
+Novelty Deduplication
+    ↓
+Dimension-Level Scoring
+    ↓
+Uncertainty Estimate
+    ↓
+Evidence Card
+```
+
+### Explicitly defer
+
+Do not build advanced forecasting, knowledge graphs, causal inference, or dynamic graph systems until the core score is validated.
+
+### MVP success condition
+
+The system should correctly distinguish companies that merely talk about AI from companies that actually integrate AI into products, workflows, operations, and research.
+
+---
+
+## 16. Strategic Differentiation
+
+### Purpose of this section
+
+End with the intellectual moat.
+
+### Core message
+
+The platform’s differentiation is the combination of mathematical modeling, AI-assisted evidence extraction, and auditable public-data intelligence.
+
+### Differentiators
+
+* Treats AI adoption as a latent variable
+* Uses source credibility and uncertainty
+* Separates marketing from operational evidence
+* Scores dimensions, not just mentions
+* Produces auditable evidence cards
+* Supports sector normalization
+* Can improve over time as evidence and models improve
+* Combines human theoretical insight with machine-scale evidence processing
+
+### Final positioning
+
+This is not an AI keyword index.
+
+This is a probabilistic intelligence system for estimating the depth of AI transformation inside companies.
+

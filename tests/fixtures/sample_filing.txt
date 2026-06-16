@@ -1,0 +1,17 @@
+Item 1. Business.
+
+Our company designs and sells industrial equipment to manufacturing customers
+across North America and Europe. Revenue is recognized when control of the goods
+transfers to the customer, typically upon shipment.
+
+We are investing heavily in artificial intelligence and machine learning to power
+predictive maintenance features across our connected product lines. During the
+year we deployed a large language model assistant to help field technicians
+diagnose equipment faults more quickly.
+
+The remainder of this section discusses ordinary commercial matters such as
+inventory management, supplier relationships, and quarterly installment financing
+options offered to certain customers. None of these touch on advanced technology.
+
+Our research organization expanded its computer vision team to improve automated
+defect detection on the production line, a core part of our AI roadmap.
