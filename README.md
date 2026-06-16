@@ -62,11 +62,17 @@ PATENTSVIEW_API_KEY="..."      # AI patent activity (PatentsView Search API)
 See [`docs/data-sources.md`](docs/data-sources.md) for the full platform table (synced
 from the registry). Quick check: `ai-collect show-platforms`.
 
+Company domains and search aliases:
+[`config/company_domains.yaml`](config/company_domains.yaml),
+[`config/company_aliases.yaml`](config/company_aliases.yaml).
+Inspect one company: `ai-collect validate-company MSFT`.
+
 ## Collect evidence (`ai-collect`)
 
 ```bash
 ai-collect init-db                          # create DB + apply migrations
-ai-collect load-companies                   # load S&P 500 universe + CIKs
+ai-collect load-companies                   # load S&P 500 universe + CIKs + domains/aliases
+ai-collect validate-company MSFT            # inspect identity, aliases, collection status
 ai-collect collect --ticker MSFT NVDA       # specific companies (all sources)
 ai-collect collect --source sec research    # limit to specific sources
 ai-collect collect --all                    # every loaded company

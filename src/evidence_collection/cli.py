@@ -13,7 +13,13 @@ from .reprocess import reprocess_documents
 from .registry_gate import get_platform_registry, reset_registry_cache
 from .platforms import Platform, runtime_key_status
 from .runner import run_collection
-from .universe import fetch_sec_companies, fetch_sp500_with_ciks, match_rows, resolve_company
+from .universe import (
+    enrich_companies,
+    fetch_sec_companies,
+    load_universe,
+    match_rows,
+    resolve_company,
+)
 
 logger = get_logger("evidence_collection.cli")
 
@@ -44,12 +50,9 @@ def cmd_init_db(args) -> None:
 
 def cmd_load_companies(args) -> None:
     conn = _conn()
-    rows = fetch_sp500_with_ciks()
-    if args.limit:
-        rows = rows[: args.limit]
-    n = repo.upsert_companies(conn, rows)
+    n, aliases = load_universe(conn, limit=args.limit)
     conn.close()
-    print(f"Loaded {n} companies into {settings.db_path}")
+    print(f"Loaded {n} companies into {settings.db_path} ({aliases} aliases from config)")
 
 
 def _select_companies(conn, args) -> tuple[list[dict], list[str] | None]:
@@ -71,7 +74,7 @@ def cmd_collect(args) -> None:
     conn = _conn()
     if repo.count_companies(conn) == 0:
         print("Company universe is empty; loading S&P 500 first...")
-        repo.upsert_companies(conn, fetch_sp500_with_ciks())
+        load_universe(conn)
 
     companies, requested = _select_companies(conn, args)
     if requested:
@@ -84,6 +87,7 @@ def cmd_collect(args) -> None:
         conn.close()
         raise SystemExit("No matching companies found. Run: ai-collect load-companies")
 
+    companies = enrich_companies(conn, companies)
     collectors = get_collectors(args.source)
     totals = run_collection(
         conn, companies, collectors,
@@ -100,7 +104,7 @@ def cmd_analyze(args) -> None:
     conn = _conn()
     if repo.count_companies(conn) == 0:
         print("Company universe is empty; loading S&P 500 first...")
-        repo.upsert_companies(conn, fetch_sp500_with_ciks())
+        load_universe(conn)
 
     query = " ".join(args.name).strip()
     matches = resolve_company(conn, query)
@@ -117,7 +121,7 @@ def cmd_analyze(args) -> None:
         raise SystemExit(f"'{query}' matches multiple companies:\n{listing}{extra}\n"
                          "Re-run with a more specific name or the exact ticker.")
 
-    company = matches[0]
+    company = enrich_companies(conn, [matches[0]])[0]
     repo.upsert_companies(conn, [company])
     print(f"Analyzing {company['ticker']} — {company['company_name']} "
           f"({company.get('sector') or 'n/a'})")
@@ -199,6 +203,52 @@ def cmd_validate(args) -> None:
               f"{str(c['source_reliability']):<12} {c['rows']:>6} {c['companies']:>5}")
     if any(violations.values()):
         raise SystemExit(1)
+
+
+def format_company_identity_report(conn, ticker: str) -> str:
+    """Build a human-readable identity + status summary for one ticker."""
+    companies = repo.get_companies(conn, [ticker])
+    if not companies:
+        raise ValueError(f"Ticker {ticker!r} not in database. Run: ai-collect load-companies")
+    company = companies[0]
+    aliases = repo.get_aliases(conn, ticker)
+    statuses = repo.status_summary(conn, [ticker])
+
+    lines = [
+        f"{company['ticker']} — {company.get('company_name') or 'n/a'}",
+        f"  CIK:             {company.get('cik') or 'n/a'}",
+        f"  Sector:          {company.get('sector') or 'n/a'}",
+        f"  Industry:        {company.get('industry') or 'n/a'}",
+        f"  Website domain:  {company.get('website_domain') or 'n/a'}",
+    ]
+    if aliases:
+        lines.append("  Aliases:")
+        for row in aliases:
+            lines.append(f"    - {row['alias']} ({row['alias_type']})")
+    else:
+        lines.append("  Aliases:         (none)")
+    if statuses:
+        lines.append("  Last collection status:")
+        for row in statuses:
+            msg = f" — {row['message']}" if row.get("message") else ""
+            lines.append(
+                f"    {row['source_type']:<24} {row['status']:<18} "
+                f"evidence={row['evidence_count']}{msg}"
+            )
+    else:
+        lines.append("  Last collection status: (none — run ai-collect collect)")
+    return "\n".join(lines)
+
+
+def cmd_validate_company(args) -> None:
+    conn = _conn()
+    ticker = _normalize([args.ticker])[0]
+    try:
+        print(format_company_identity_report(conn, ticker))
+    except ValueError as exc:
+        conn.close()
+        raise SystemExit(str(exc)) from exc
+    conn.close()
 
 
 def cmd_status(args) -> None:
@@ -312,6 +362,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Document sources to reprocess (default: all document sources).")
     s.add_argument("--ticker", nargs="*")
     s.set_defaults(func=cmd_reprocess)
+
+    s = sub.add_parser("validate-company", help="Show identity + aliases + last status for one ticker.")
+    s.add_argument("ticker", help="Ticker symbol, e.g. MSFT")
+    s.set_defaults(func=cmd_validate_company)
 
     s = sub.add_parser("status", help="Show the latest collection status per company/source.")
     s.add_argument("--ticker", nargs="*")

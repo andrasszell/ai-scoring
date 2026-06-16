@@ -24,8 +24,10 @@ tracks current progress only.
   persisted scores (§4/§5). 50 tests.
 - [x] **Platform registry (Block A):** `config/platforms.yaml` is the authoritative
   platform list; loader, tests, wired sources/collectors, `show-platforms`, docs synced.
+- [x] **Entity metadata (Block B):** `website_domain` + `company_aliases` from config;
+  `validate-company` CLI; shared `load_universe()` on all entry points.
 - [ ] **Phase 1 — Stabilize core collectors + validation sample.** Deliverable:
-  high-quality evidence corpus for 25–50 companies (Blocks B–D).
+  high-quality evidence corpus for 25–50 companies (Blocks C–D).
 - [ ] **Phase 2 — High-value sources:** add platforms via registry + new collectors.
 - [ ] **Phase 3 — Scale to full universe:** full S&P 500, API-cost tracking,
   incremental refresh, freshness monitoring, failed-source retry queue.
@@ -57,23 +59,29 @@ Edit config/platforms.yaml → collector adapter → tests → sync docs → val
 
 (See §6A.4 in the initial plan.)
 
-### 2. Collector stabilization (Block B–C)
+### 2. Entity metadata (Block B — complete)
 
 | # | Task | Done |
 |---|---|---|
-| 2.1 | Per-source `source_date` where API provides it (jobs, web, patents, research) | [ ] |
-| 2.2 | Populate `companies.website_domain` (enables per-domain source refinement) | [ ] |
-| 2.3 | Seed `company_aliases` from in-code brand map + known subsidiaries | [ ] |
-| 2.4 | Extend `reprocess` for any new document-backed sources | [ ] |
+| B.1 | Seed `companies.website_domain` from config for default universe | [x] |
+| B.2 | Seed `company_aliases` from config; use DB in `search_name` | [x] |
+| B.3 | Add `ai-collect validate-company` identity inspector | [x] |
 
-### 3. Validation sample (Block D)
+### 3. Collector stabilization (Block C)
 
 | # | Task | Done |
 |---|---|---|
-| 3.1 | Run full collection for 25–50 companies (default mega-caps + sector spread) | [ ] |
-| 3.2 | Capture `ai-collect validate` report (violations must be 0) | [ ] |
-| 3.3 | Capture `ai-collect status` + export bundle for Team 2 review | [ ] |
-| 3.4 | QA note: sample evidence accuracy per source (manual spot-check) | [ ] |
+| C.1 | Per-source `source_date` where API provides it (jobs, web, patents, research) | [ ] |
+| C.2 | Extend `reprocess` for any new document-backed sources | [ ] |
+
+### 4. Validation sample (Block D)
+
+| # | Task | Done |
+|---|---|---|
+| D.1 | Run full collection for 25–50 companies (default mega-caps + sector spread) | [ ] |
+| D.2 | Capture `ai-collect validate` report (violations must be 0) | [ ] |
+| D.3 | Capture `ai-collect status` + export bundle for Team 2 review | [ ] |
+| D.4 | QA note: sample evidence accuracy per source (manual spot-check) | [ ] |
 
 ---
 

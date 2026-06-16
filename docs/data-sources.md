@@ -119,8 +119,10 @@ Applied automatically on every evidence row (`source_category`,
 ## Per-domain refinement (implemented)
 
 A row whose URL is on the company's own `website_domain` is upgraded to
-`official_company / high` (`sources.refine_for_url`). Backfilling
-`companies.website_domain` is a Phase 1 task (Block B).
+`official_company / high` (`sources.refine_for_url`). Domains are seeded from
+[`config/company_domains.yaml`](../config/company_domains.yaml) on `load-companies`.
+Search aliases live in [`config/company_aliases.yaml`](../config/company_aliases.yaml).
+Inspect one company: `ai-collect validate-company MSFT`.
 
 ---
 

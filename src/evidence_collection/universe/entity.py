@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import sqlite3
 
 _PAREN_RE = re.compile(r"\s*\(.*?\)")
 _SUFFIX_RE = re.compile(
@@ -9,14 +13,16 @@ _SUFFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Employer brand names used by job boards / search differ from legal/index names.
-# Keyed by ticker for precision. Extend as needed.
-QUERY_ALIASES = {
+# Tiny fallback when DB aliases are empty (e.g. before load-companies).
+_FALLBACK_QUERY_ALIASES = {
     "GOOGL": "Google",
     "GOOG": "Google",
     "META": "Meta",
     "AMZN": "Amazon.com",
 }
+
+# Backward-compatible export for tests/docs referencing QUERY_ALIASES.
+QUERY_ALIASES = _FALLBACK_QUERY_ALIASES
 
 
 def clean_company_name(name: str) -> str:
@@ -31,9 +37,20 @@ def clean_company_name(name: str) -> str:
     return cleaned or (name or "").strip()
 
 
-def search_name(company: dict) -> str:
-    """Best query string for a company: a known brand alias, else its cleaned name."""
-    alias = QUERY_ALIASES.get((company.get("ticker") or "").upper())
+def search_name(company: dict, *, conn: sqlite3.Connection | None = None) -> str:
+    """Best query string for a company: DB brand alias, code fallback, else cleaned name."""
+    ticker = (company.get("ticker") or "").upper().replace(".", "-")
+    if conn is not None:
+        from ..db import repository as repo
+
+        aliases = repo.get_aliases(conn, ticker)
+        for row in aliases:
+            if row.get("alias_type") == "brand" and row.get("alias"):
+                return row["alias"]
+        for row in aliases:
+            if row.get("alias"):
+                return row["alias"]
+    alias = _FALLBACK_QUERY_ALIASES.get(ticker)
     return alias or clean_company_name(company.get("company_name", ""))
 
 

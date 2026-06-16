@@ -2,6 +2,17 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Phase 1 Block B: entity metadata (Steps 2.1–2.3)
+
+- **`config/company_domains.yaml`** — seeds `companies.website_domain` for default tickers.
+- **`config/company_aliases.yaml`** — brand aliases seeded into `company_aliases` on load.
+- **`universe/domains.py`, `universe/aliases.py`, `universe/load.py`** — shared
+  `load_universe()` (domains + aliases) used by `load-companies`, `collect`, and
+  `analyze`; `enrich_companies()` backfills domains before collection.
+- **`search_name(company, conn=...)`** — DB aliases first; SerpAPI collectors wired.
+- **CLI:** `ai-collect validate-company MSFT` — identity + alias + status inspector.
+- Test suite: 89 tests.
+
 ## 2026-06-16 — Phase 1 Block A: platform registry implemented (Steps 1.2–1.8)
 
 - **Registry loader:** `platforms.py` with schema validation; unit tests in

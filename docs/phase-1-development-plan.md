@@ -314,11 +314,11 @@ ai-collect show-platforms --all
 
 ---
 
-## Block B — Entity & company metadata (Steps 2.1–2.4)
+### Block B — Entity metadata (Steps 2.1–2.3) ✅
 
 *Goal: better company identity so collectors and source refinement work reliably.*
 
-### Step 2.1 — Backfill `companies.website_domain`
+### Step 2.1 — Backfill `companies.website_domain` ✅
 
 **Depends on:** Block A complete (or at least Step 1.2)
 
@@ -336,8 +336,8 @@ ai-collect show-platforms --all
 
 **Done when:**
 
-- [ ] After `load-companies`, at least DEFAULT_TICKERS (10) have `website_domain` set.
-- [ ] `web_products` evidence for MSFT on `microsoft.com` gets `source_category=official_company` (existing test extended).
+- [x] After `load-companies`, at least DEFAULT_TICKERS (10) have `website_domain` set.
+- [x] `web_products` evidence for MSFT on `microsoft.com` gets `source_category=official_company` (existing test extended).
 
 **Verify:**
 
@@ -355,7 +355,7 @@ pytest tests/unit/test_serpapi.py -q
 
 ---
 
-### Step 2.2 — Seed `company_aliases` table
+### Step 2.2 — Seed `company_aliases` table ✅
 
 **Depends on:** Step 2.1
 
@@ -376,8 +376,8 @@ pytest tests/unit/test_serpapi.py -q
 
 **Done when:**
 
-- [ ] `company_aliases` populated for GOOGL, META, AMZN at minimum.
-- [ ] Hiring/products queries use alias from DB (unit test).
+- [x] `company_aliases` populated for GOOGL, META, AMZN at minimum.
+- [x] Hiring/products queries use alias from DB (unit test).
 
 **Verify:** `pytest tests/unit/test_entity.py -q`
 
@@ -385,7 +385,7 @@ pytest tests/unit/test_serpapi.py -q
 
 ---
 
-### Step 2.3 — CLI `validate-company` (optional but recommended)
+### Step 2.3 — CLI `validate-company` (optional but recommended) ✅
 
 **Depends on:** Step 2.2
 
@@ -397,7 +397,7 @@ pytest tests/unit/test_serpapi.py -q
 
 **Done when:**
 
-- [ ] Command runs and shows sensible output for a loaded ticker.
+- [x] Command runs and shows sensible output for a loaded ticker.
 
 **Verify:** `ai-collect validate-company MSFT`
 
@@ -694,9 +694,9 @@ Block A — Platform registry
   [x] 1.8  docs synced
 
 Block B — Entity metadata
-  [ ] 2.1  website_domain
-  [ ] 2.2  company_aliases
-  [ ] 2.3  validate-company CLI
+  [x] 2.1  website_domain
+  [x] 2.2  company_aliases
+  [x] 2.3  validate-company CLI
 
 Block C — Collector stabilization
   [ ] 3.1  source_date audit

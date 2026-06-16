@@ -88,7 +88,7 @@ class ProductServiceCollector(Collector):
         ticker = company["ticker"]
         if not settings.serpapi_api_key:
             return api_key_missing_result(self)
-        query = f'"{search_name(company)}" ({AI_TERMS}) product OR platform OR solution OR service'
+        query = f'"{search_name(company, conn=conn)}" ({AI_TERMS}) product OR platform OR solution OR service'
         params = {"engine": "google", "q": query, "api_key": settings.serpapi_api_key, "num": num}
         resp = get(SERPAPI, params=params)
         _save_raw(ctx, ticker=ticker, collector=self, url=SERPAPI, params=params, resp=resp)
@@ -140,7 +140,7 @@ class HiringCollector(Collector):
         ticker = company["ticker"]
         if not settings.serpapi_api_key:
             return api_key_missing_result(self)
-        query = f"{search_name(company)} ({JOBS_QUERY_ROLES})"
+        query = f"{search_name(company, conn=conn)} ({JOBS_QUERY_ROLES})"
         jobs_results, api_calls = self._fetch_jobs(ctx, ticker, query)
 
         rows, linkedin = parse_job_rows(self, company, query, jobs_results)

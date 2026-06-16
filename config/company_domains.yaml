@@ -1,0 +1,17 @@
+# Primary corporate website per ticker (Phase 1 seed list).
+# Used for per-domain source refinement (Coding Standards §6).
+# Change workflow: edit this file → load-companies → change-log entry.
+#
+# Keep separate from config/platforms.yaml — this is entity metadata, not a data platform.
+
+AAPL: apple.com
+MSFT: microsoft.com
+NVDA: nvidia.com
+AMZN: amazon.com
+GOOGL: google.com
+GOOG: google.com
+META: meta.com
+AVGO: broadcom.com
+TSLA: tesla.com
+BRK-B: berkshirehathaway.com
+JPM: jpmorganchase.com

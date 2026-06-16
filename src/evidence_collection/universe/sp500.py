@@ -77,8 +77,10 @@ def fetch_sec_companies() -> list[dict]:
 
 
 def fetch_sp500_with_ciks() -> list[dict]:
+    from .domains import apply_domains
+
     rows = fetch_sp500()
     cik_map = fetch_sec_ticker_map()
     for row in rows:
         row["cik"] = cik_map.get(row["ticker"])
-    return rows
+    return apply_domains(rows)

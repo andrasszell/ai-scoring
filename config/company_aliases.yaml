@@ -1,0 +1,15 @@
+# Search aliases for collectors (brand vs legal name).
+# Seeded into company_aliases on load-companies. See entity.search_name().
+
+GOOGL:
+  - alias: Google
+    alias_type: brand
+GOOG:
+  - alias: Google
+    alias_type: brand
+META:
+  - alias: Meta
+    alias_type: brand
+AMZN:
+  - alias: Amazon.com
+    alias_type: brand
