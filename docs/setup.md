@@ -17,9 +17,11 @@ Set at least the SEC contact (required by EDGAR fair-access):
 SEC_USER_AGENT="Your Name your.email@example.com"
 ```
 
-Optional API keys (collectors without their key are skipped and record an
-`api_key_missing` status): `FMP_API_KEY`, `SERPAPI_API_KEY`,
-`SEMANTIC_SCHOLAR_API_KEY`, `PATENTSVIEW_API_KEY`.
+Optional API keys — approved platforms in
+[`data-collection-initial-plan.md` §6A](data-collection-initial-plan.md#6a-data-platform-decisions),
+detail in [`data-sources.md`](data-sources.md):
+`FMP_API_KEY`, `SERPAPI_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `PATENTSVIEW_API_KEY`.
+Collectors without their key are skipped and record an `api_key_missing` status.
 
 ## Smallest end-to-end run (no paid keys)
 

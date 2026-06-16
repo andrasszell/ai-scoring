@@ -1,6 +1,11 @@
-# Implementation Plan for Data Collection Team
+# Data Collection — Initial Implementation Plan
 
 ## AI Adoption Intelligence Platform — Evidence Discovery Layer
+
+> **Document role:** This is the original strategic plan for Team 1 (Evidence
+> Discovery Layer): mission, architecture, standards, and phased roadmap. For
+> **current progress** (what is done vs next), see
+> [`implementation-plan.md`](implementation-plan.md).
 
 ---
 
@@ -153,6 +158,7 @@ The data collection layer should support source families in phases.
 ### Phase 1 — Existing MVP Sources
 
 These are already partially supported and should be stabilized first.
+**Approved platforms for each source:** see **§6A.1**.
 
 ```text
 SEC filings / annual reports
@@ -199,6 +205,131 @@ BuiltWith
 ```
 
 These sources should be added only if they materially improve evidence quality.
+
+---
+
+## 6A. Data Platform Decisions
+
+This section is the **single source of truth** for which platforms the collection
+layer uses: external data providers, internal storage, and the handoff to Team 2.
+Operational detail (env vars, reliability rules) lives in
+[`data-sources.md`](data-sources.md).
+
+### 6A.1 Evidence source platforms (Phase 1 — approved)
+
+Phase 1 stabilizes the six evidence collectors **plus** the company universe
+loaders. Each row names the **approved platform/API** for that source in the
+current codebase (`ai-collect`).
+
+#### Company universe (prerequisite — not an evidence pillar)
+
+| Purpose | Platform / API | Auth | Cost model | Notes |
+|---|---|---|---|---|
+| S&P 500 constituents | [Wikipedia — List of S&P 500 companies](https://en.wikipedia.org/wiki/List_of_S%26P_500_companies) | None (descriptive User-Agent) | Free | Sector/industry metadata |
+| CIK mapping + SEC fallback universe | [SEC `company_tickers.json`](https://www.sec.gov/files/company_tickers.json) | `SEC_USER_AGENT` (contact string) | Free | Required for EDGAR; also used when a company is not in the S&P 500 list |
+
+CLI: `ai-collect load-companies` (Wikipedia + SEC CIK merge).
+
+#### Phase 1 evidence collectors (approved)
+
+| Pillar | Collector | Platform / API | Env key | Cost / limits | Status |
+|---|---|---|---|---|---|
+| Annual filings | `sec_filings` | **SEC EDGAR** — submissions JSON + archive HTML | `SEC_USER_AGENT` | Free; ~4 req/s conservative rate limit | **Active** — no paid key |
+| Earnings calls | `earnings_calls` | **Financial Modeling Prep** — transcript API | `FMP_API_KEY` | Paid plan typically required for transcripts | **Active** — skipped if key missing |
+| Products / services | `web_products` | **SerpAPI** — Google web search | `SERPAPI_API_KEY` | Per-search billing; quota per plan | **Active** — skipped if key missing |
+| Hiring | `hiring_jobs` | **SerpAPI** — Google Jobs (incl. LinkedIn listings) | `SERPAPI_API_KEY` | Same SerpAPI account | **Active** — skipped if key missing |
+| Patents | `patents` | **PatentsView Search API** | `PATENTSVIEW_API_KEY` | Free key; rate limits apply | **Active** — skipped if key missing |
+| Research papers | `research` | **Semantic Scholar** Graph API | `SEMANTIC_SCHOLAR_API_KEY` (optional) | Free tier heavily rate-limited; key raises limits | **Active** — works without key |
+
+**Phase 1 rule:** no new paid vendor is approved until Phase 1 validation (25–50
+companies) is complete and gaps are documented. Swapping a collector's backend
+(e.g. FMP → AlphaSense for transcripts) requires updating this table and
+`data-sources.md` in the same change.
+
+#### Phase 2 sources (planned — platform TBD)
+
+Sources from §6 Phase 2 (GitHub, press releases, product docs, etc.) do **not** yet
+have an approved vendor. Each will get a row here before implementation.
+
+#### Phase 3 premium vendors (evaluate — not approved)
+
+Listed in §6 Phase 3 (Lightcast, Revelio, Coresignal, Proxycurl, LinkedIn Talent
+Insights, AlphaSense, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith).
+
+**Evaluation criteria** (all must be documented before approval):
+
+```text
+Does it materially improve evidence quality vs Phase 1 APIs?
+Is legal/licensing use clear for our deployment model?
+Cost at S&P 500 scale (and refresh frequency)?
+API stability, rate limits, and historical coverage?
+Can we store raw responses for audit/reprocess (§9)?
+Overlap with an existing approved platform?
+```
+
+---
+
+### 6A.2 Storage and artifacts (MVP → scale)
+
+#### Current stack (Phase 0–1 — approved)
+
+| Layer | Platform | Location / config | Role |
+|---|---|---|---|
+| Structured corpus | **SQLite** (WAL mode) | `AI_DEPTH_DB` → `data/evidence.sqlite` | Companies, documents, evidence, collector status, raw API responses, scores (inference) |
+| Schema evolution | In-repo **migration runner** | `evidence_collection/db/migrations.py` | Versioned, append-only migrations |
+| Raw documents | **Local filesystem** | `AI_DEPTH_RAW_DIR` → `data/raw/` | SEC filing HTML/text, earnings transcript text |
+| Exports | **Local filesystem** | `AI_DEPTH_EXPORT_DIR` → `data/exports/` | CSV + JSONL handoff artifacts |
+| Orchestration | **CLI** (`ai-collect`) | Manual or cron | No scheduler framework in Phase 1 |
+| Runtime | **Python 3.10+** | `pip install -e .` | Collectors, validation, reprocess |
+
+#### Scale triggers (when to revisit)
+
+| Trigger | Likely upgrade | Owner |
+|---|---|---|
+| Concurrent writers / multi-user access | **PostgreSQL** (or similar) replacing SQLite | Team 1 pipeline |
+| Raw corpus > local disk / need shared access | **Object storage** (S3, GCS, Azure Blob) for `raw/` + manifest in DB | Team 1 pipeline |
+| Team 2 analytics at scale | **Parquet** snapshots + optional warehouse (BigQuery, Snowflake, Databricks) | Joint |
+| Full S&P 500 scheduled refresh | Job scheduler (**Prefect**, **Airflow**, or cloud cron) + retry queue | Team 1 pipeline |
+| Inference team needs live queries | Read-only **REST API** over evidence corpus | Team 1 → Team 2 handoff |
+
+**Phase 1 decision:** stay on SQLite + local files. Do not add Postgres, object
+storage, or a scheduler until one of the triggers above is hit during the 25–50
+company validation or S&P 500 pilot.
+
+---
+
+### 6A.3 Handoff and exports (Team 1 → Team 2)
+
+Team 2 consumes a **versioned evidence corpus**, not live source APIs.
+
+#### Implemented today (Phase 0–1)
+
+| Format | Command | Use |
+|---|---|---|
+| `companies.csv` | `ai-collect export-all` | Company universe |
+| `documents.csv` | `ai-collect export-all` | Document manifest (paths, hashes) |
+| `evidence_items.csv` | `ai-collect export-all` / `export-evidence` | Candidate evidence rows |
+| `collector_status.csv` | `ai-collect export-all` | Per-source success/failure audit |
+| `evidence_items.jsonl` | `ai-collect export-all` / `export-evidence --format jsonl` | Preferred machine-readable export |
+| SQLite file copy | Copy `data/evidence.sqlite` | Full reproducible snapshot |
+
+Team 2 CLI (`ai-score`) reads the shared SQLite DB or exports; it does **not**
+call SEC, SerpAPI, or other source APIs.
+
+#### Planned (Phase 4)
+
+```text
+Versioned, dated snapshot bundles (corpus vYYYY-MM-DD/)
+Parquet export for analytics
+Field-definition document frozen per snapshot
+Read-only HTTP API (optional)
+```
+
+#### Reprocess contract
+
+`ai-collect reprocess` rebuilds evidence from **stored document text** with no
+network — this is the reproducibility guarantee (§9). Any new storage backend
+must preserve raw documents or raw API responses with content hashes.
 
 ---
 
@@ -462,7 +593,10 @@ For example, if 20 articles discuss the same AI product launch using different l
 
 ## 14. Storage Design
 
-The existing SQLite approach is appropriate for MVP.
+> **Platform decisions:** see **§6A.2** for the approved MVP stack (SQLite +
+> local files) and scale triggers. This section describes the logical schema only.
+
+SQLite is the approved structured store for Phase 0–1.
 
 Recommended tables:
 
@@ -479,16 +613,23 @@ raw_api_responses
 
 ### Existing tables to preserve or adapt
 
-The current project already uses:
+The codebase implements (Phase 0 refactor):
 
 ```text
 companies
+company_aliases
 documents
-ai_evidence
-metrics
+evidence_items
+collector_runs
+collector_status
+collection_metrics
+raw_api_responses
+schema_migrations
 ```
 
-The `metrics` table should eventually move out of the collection layer or be restricted to collection metrics only.
+Legacy prototype tables (`ai_evidence`, `metrics`) were replaced by the above.
+The `scores` table is owned by the inference layer but lives in the same DB file
+for MVP convenience.
 
 ---
 
@@ -519,6 +660,9 @@ They should not be used directly as final AI-depth scores.
 
 ## 16. Output Interface for Mathematical Team
 
+> **Platform decisions:** see **§6A.3** for implemented vs planned export formats
+> and the Team 1 → Team 2 handoff contract.
+
 The data collection team should provide clean exports for the processing team.
 
 ### Required exports
@@ -533,13 +677,13 @@ raw_document_manifest.csv
 
 ### Preferred advanced format
 
-Also support:
+Planned in Phase 4 (see §6A.3):
 
 ```text
-JSONL evidence export
-SQLite database snapshot
-Parquet export
-API endpoint
+JSONL evidence export          ← implemented (Phase 0)
+SQLite database snapshot       ← implemented (copy DB file)
+Parquet export                 ← planned
+API endpoint                   ← planned
 ```
 
 ### Evidence export should include

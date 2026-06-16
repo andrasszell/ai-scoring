@@ -1,7 +1,12 @@
 # Implementation Plan (current)
 
-Concise, living task plan (Coding Standards §13). The full strategic plan is in
-`Implementation Plan for Data Collection Team.md`; this file tracks the active phase.
+Concise, living task plan (Coding Standards §13). The original strategic plan is
+[`data-collection-initial-plan.md`](data-collection-initial-plan.md); this file
+tracks current progress only.
+
+**Platform decisions (approved APIs, storage, handoff):**
+[`data-collection-initial-plan.md` §6A](data-collection-initial-plan.md#6a-data-platform-decisions).
+Operational detail: [`data-sources.md`](data-sources.md).
 
 ## Status
 

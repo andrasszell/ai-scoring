@@ -12,7 +12,7 @@
 > with a strict separation of duties:
 >
 > - **Evidence Discovery Layer** (`ai-collect`) finds and preserves evidence. It
->   does *not* score companies. See `docs/Implementation Plan for Data Collection Team.md`.
+>   does *not* score companies. See `docs/data-collection-initial-plan.md`.
 > - **Inference Layer** (`ai-score`) reads the evidence corpus and produces the AI
 >   Depth Score described below.
 >

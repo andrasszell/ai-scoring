@@ -2,6 +2,16 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Data platform decisions documented (§6A)
+
+- Added **§6A Data Platform Decisions** to `data-collection-initial-plan.md`:
+  Phase 1 approved source platforms (universe + six collectors), MVP storage
+  stack (SQLite + local raw files), scale triggers, and Team 1 → Team 2 handoff.
+- Aligned `data-sources.md` as the operational companion to §6A.
+- Updated §14 and §16 to cross-reference §6A; corrected §14 table list to match
+  the implemented schema.
+- Renamed strategic plan file to `data-collection-initial-plan.md`.
+
 ## 2026-06-16 — Standards-compliance fixes (audit remediation)
 
 Closed the gaps found in the strict standards audit:

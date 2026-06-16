@@ -7,7 +7,7 @@ A monorepo with two clearly separated layers:
 | **Evidence Discovery (Team 1)** | `evidence_collection` | `ai-collect` | Finding, retrieving, normalizing, and preserving public AI evidence |
 | **Inference (Team 2)** | `inference` | `ai-score` | Interpreting evidence and producing the AI Depth Score |
 
-The non-negotiable design rule (see `docs/Implementation Plan for Data Collection Team.md`):
+The non-negotiable design rule (see `docs/data-collection-initial-plan.md`, especially §6A):
 the collection layer **finds and preserves evidence**; it does **not** score
 companies or decide what evidence means. Scoring lives entirely in `inference`.
 
@@ -38,8 +38,11 @@ Edit `.env` and set at least the SEC contact (required by EDGAR fair-access):
 SEC_USER_AGENT="Your Name your.email@example.com"
 ```
 
-Optional API keys (collectors lacking their key are **skipped gracefully** and
-record an `api_key_missing` status — never a silent failure):
+Optional API keys — full approved platform matrix:
+[`docs/data-collection-initial-plan.md` §6A](docs/data-collection-initial-plan.md#6a-data-platform-decisions),
+operational detail in [`docs/data-sources.md`](docs/data-sources.md).
+Collectors lacking their key are **skipped gracefully** and record an
+`api_key_missing` status — never a silent failure.
 
 ```bash
 FMP_API_KEY="..."              # earnings-call transcripts (usually a paid plan)
@@ -49,6 +52,8 @@ PATENTSVIEW_API_KEY="..."      # AI patent activity (PatentsView Search API)
 ```
 
 ### Which source needs which key
+
+Summary — see [`data-sources.md`](docs/data-sources.md) for the full table.
 
 | Source key | Collector | Source | Key required? |
 |---|---|---|---|
@@ -164,7 +169,7 @@ pytest
 
 CI runs the tests on Python 3.10–3.12 via GitHub Actions.
 
-## Roadmap (per the Implementation Plan)
+## Roadmap (per the initial plan + current status)
 
 - **Phase 0 (done):** separate collection from scoring; standardize evidence +
   document schema; add collector runs/status, raw-response preservation, clean exports.

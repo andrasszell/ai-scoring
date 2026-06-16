@@ -3,6 +3,15 @@
 Current scope, non-goals, and architecture for the AI Adoption Intelligence Platform.
 This is the top-level control document referenced by the Coding Standards (§13).
 
+| Document | Role |
+|---|---|
+| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = approved data platforms** |
+| [`implementation-plan.md`](implementation-plan.md) | Current progress and next steps |
+| [`project-control.md`](project-control.md) | Scope, non-goals, architecture decisions |
+| [`data-sources.md`](data-sources.md) | Operational detail for §6A (env vars, reliability) |
+| [`scoring-methodology.md`](scoring-methodology.md) | Inference-layer scoring (Team 2) |
+| [`change-log.md`](change-log.md) | Important decisions and changes |
+
 ## Architecture
 
 Two layers with a strict separation of duties (Coding Standards §2):
