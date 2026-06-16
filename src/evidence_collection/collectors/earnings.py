@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date
 from pathlib import Path
 
 from ..config import settings
+from ..dates import transcript_source_date
 from ..db import repository as repo
 from ..extraction import candidate_paragraphs, content_hash
 from ..http import get
@@ -15,6 +17,7 @@ from ..registry_gate import api_key_missing_result
 
 BASE = "https://financialmodelingprep.com/api/v3"
 LOOKBACK_YEARS = 6
+logger = logging.getLogger(__name__)
 
 
 class EarningsCallCollector(Collector):
@@ -52,18 +55,17 @@ class EarningsCallCollector(Collector):
                     api_calls += 1
                     data = resp.json()
                 except Exception as exc:  # noqa: BLE001
-                    inserted = repo.insert_evidence(conn, rows)
-                    return CollectorResult(
-                        CollectionStatus.SOURCE_UNAVAILABLE,
-                        evidence_count=inserted,
-                        api_calls=api_calls,
-                        message=f"error: {exc}",
+                    logger.warning(
+                        "FMP transcript fetch failed %s %s Q%s: %s", ticker, year, quarter, exc
                     )
+                    continue
                 if not data:
                     continue
                 item = data[0] if isinstance(data, list) else data
                 content = item.get("content") or item.get("transcript") or ""
-                transcript_date = str(item.get("date") or f"{year}Q{quarter}")
+                if not str(content).strip():
+                    continue
+                transcript_date, date_provenance = transcript_source_date(item, year=year, quarter=quarter)
                 source_url = f"fmp://earning_call_transcript/{ticker}/{year}/Q{quarter}"
                 transcripts_seen += 1
                 # Persist raw transcript text so evidence can be reprocessed offline.
@@ -84,7 +86,9 @@ class EarningsCallCollector(Collector):
                         "text_path": str(text_path),
                         "content_hash": content_hash(content),
                         "parser_version": "fmp_transcript/1.0",
-                        "metadata_json": json.dumps({"year": year, "quarter": quarter}),
+                        "metadata_json": json.dumps(
+                            {"year": year, "quarter": quarter, "date_provenance": date_provenance}
+                        ),
                     },
                 )
                 for p in candidate_paragraphs(content, settings.max_candidate_paragraphs // 2):
@@ -96,7 +100,12 @@ class EarningsCallCollector(Collector):
                             source_date=transcript_date,
                             source_name=f"{year} Q{quarter}",
                             raw_document_id=document_id,
-                            metadata={"keywords": p["keywords"], "year": year, "quarter": quarter},
+                            metadata={
+                                "keywords": p["keywords"],
+                                "year": year,
+                                "quarter": quarter,
+                                "date_provenance": date_provenance,
+                            },
                         )
                     )
             if transcripts_seen >= limit_quarters:

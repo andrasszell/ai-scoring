@@ -433,9 +433,20 @@ for row in c.execute('''
 
 **Document findings** in this file or a scratch note.
 
+**Audit (2026-06-16, pre-fix baseline):**
+
+| Collector | `source_date` before fix | Fix |
+|-----------|--------------------------|-----|
+| `sec_filings` | ✅ `filing_date` from EDGAR | none |
+| `products` (SerpAPI) | ❌ always NULL | retrieval date fallback + organic `date` when present |
+| `hiring_jobs` (SerpAPI) | ❌ always NULL | `detected_extensions.posted_at` / extensions; else retrieval date |
+| `patents` | ⚠️ nullable `patent_date` from API | normalize + retrieval fallback |
+| `research` | ⚠️ empty string when `year` missing | `YYYY-01-01` from year + retrieval fallback |
+| `earnings_calls` | ⚠️ partial (`yearQquarter` when FMP date missing) | ISO transcript date or quarter anchor; skip empty transcripts |
+
 **Done when:**
 
-- [ ] You have a list of collectors needing date fixes.
+- [x] You have a list of collectors needing date fixes.
 
 **Commit:** none (audit only) — or doc commit: `Document source_date audit for Phase 1`
 
@@ -453,8 +464,8 @@ for row in c.execute('''
 
 **Done when:**
 
-- [ ] New MSFT product/job evidence rows have non-null `source_date`.
-- [ ] `ai-collect validate` → `missing_source_anchor: 0`.
+- [x] New MSFT product/job evidence rows have non-null `source_date`.
+- [x] `ai-collect validate` → `missing_source_anchor: 0`.
 
 **Verify:** collect + validate + pytest
 
@@ -473,7 +484,7 @@ for row in c.execute('''
 
 **Done when:**
 
-- [ ] Patent and research rows have `source_date` populated on re-collect.
+- [x] Patent and research rows have `source_date` populated on re-collect.
 
 **Verify:** `ai-collect collect --ticker MSFT --source patents research && ai-collect validate`
 
@@ -491,8 +502,8 @@ for row in c.execute('''
 
 **Done when:**
 
-- [ ] With valid `FMP_API_KEY`, at least one transcript stores date + text_path.
-- [ ] Without key, status is `api_key_missing` from registry path.
+- [x] With valid `FMP_API_KEY`, at least one transcript stores date + text_path.
+- [x] Without key, status is `api_key_missing` from registry path.
 
 **Verify:** collect with/without key; `ai-collect status`
 
@@ -517,8 +528,8 @@ pytest tests/integration/test_reprocess.py -q
 
 **Done when:**
 
-- [ ] Reprocess evidence count matches sec-only collect (approximately).
-- [ ] All tests pass.
+- [x] Reprocess evidence count matches sec-only collect (approximately).
+- [x] All tests pass.
 
 **Commit:** `Verify reprocess idempotency after Phase 1 collector updates`
 
@@ -699,11 +710,11 @@ Block B — Entity metadata
   [x] 2.3  validate-company CLI
 
 Block C — Collector stabilization
-  [ ] 3.1  source_date audit
-  [ ] 3.2  SerpAPI dates
-  [ ] 3.3  patents/research dates
-  [ ] 3.4  earnings hardening
-  [ ] 3.5  reprocess smoke test
+  [x] 3.1  source_date audit
+  [x] 3.2  SerpAPI dates
+  [x] 3.3  patents/research dates
+  [x] 3.4  earnings hardening
+  [x] 3.5  reprocess smoke test
 
 Block D — Validation sample
   [ ] 4.1  validation company list
@@ -715,4 +726,4 @@ Block D — Validation sample
 
 ---
 
-*Last updated: 2026-06-16 — Phase 1 planning*
+*Last updated: 2026-06-16 — Block C collector stabilization complete*

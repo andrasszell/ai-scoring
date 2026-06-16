@@ -6,6 +6,7 @@ import time
 from urllib.parse import urlparse
 
 from ..config import settings
+from ..dates import collection_date_iso, job_posted_date, web_result_date
 from ..registry_gate import api_key_missing_result
 from ..db import repository as repo
 from ..extraction import content_hash
@@ -46,7 +47,14 @@ def _job_source(job: dict) -> str:
     return job.get("share_link") or ""
 
 
-def parse_job_rows(collector, company: dict, query: str, jobs_results: list[dict]) -> tuple[list[dict], int]:
+def parse_job_rows(
+    collector,
+    company: dict,
+    query: str,
+    jobs_results: list[dict],
+    *,
+    retrieval_date: str | None = None,
+) -> tuple[list[dict], int]:
     """Turn SerpAPI google_jobs results into evidence rows.
 
     Pure (no I/O) so it can be unit-tested with a sample payload. Returns the rows
@@ -63,14 +71,21 @@ def parse_job_rows(collector, company: dict, query: str, jobs_results: list[dict
         text = " — ".join(
             x for x in [job.get("title"), job.get("company_name"), job.get("location"), via] if x
         )
+        source_date, date_provenance = job_posted_date(job, fallback=retrieval_date)
         rows.append(
             collector.make_evidence(
                 company,
                 evidence_text=text,
                 source_url=_job_source(job),
+                source_date=source_date,
                 evidence_title=job.get("title"),
                 source_name=platform or "Google Jobs",
-                metadata={"query": query, "platform": platform, "is_linkedin": is_linkedin},
+                metadata={
+                    "query": query,
+                    "platform": platform,
+                    "is_linkedin": is_linkedin,
+                    "date_provenance": date_provenance,
+                },
             )
         )
     return rows, linkedin
@@ -95,18 +110,25 @@ class ProductServiceCollector(Collector):
         results = resp.json().get("organic_results", [])
 
         repo.delete_evidence(conn, ticker, self.name)
+        retrieval = collection_date_iso()
         rows = []
         for r in results:
             text = " — ".join(x for x in [r.get("title"), r.get("snippet")] if x)
             if not re.search(r"AI|artificial intelligence|machine learning|generative", text, re.I):
                 continue
+            source_date, date_provenance = web_result_date(r, fallback=retrieval)
             rows.append(
                 self.make_evidence(
                     company,
                     evidence_text=text,
                     source_url=r.get("link"),
+                    source_date=source_date,
                     evidence_title=r.get("title"),
-                    metadata={"query": query, "domain": urlparse(r.get("link", "")).netloc},
+                    metadata={
+                        "query": query,
+                        "domain": urlparse(r.get("link", "")).netloc,
+                        "date_provenance": date_provenance,
+                    },
                 )
             )
         inserted = repo.insert_evidence(conn, rows)
@@ -143,7 +165,9 @@ class HiringCollector(Collector):
         query = f"{search_name(company, conn=conn)} ({JOBS_QUERY_ROLES})"
         jobs_results, api_calls = self._fetch_jobs(ctx, ticker, query)
 
-        rows, linkedin = parse_job_rows(self, company, query, jobs_results)
+        rows, linkedin = parse_job_rows(
+            self, company, query, jobs_results, retrieval_date=collection_date_iso()
+        )
         repo.delete_evidence(conn, ticker, self.name)
         inserted = repo.insert_evidence(conn, rows)
         if inserted:

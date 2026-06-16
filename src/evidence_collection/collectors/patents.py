@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from ..dates import normalize_patent_date
 from ..config import settings
 from ..db import repository as repo
 from ..extraction import content_hash
@@ -64,14 +65,20 @@ class PatentsCollector(Collector):
         repo.delete_evidence(conn, ticker, self.name)
         rows = []
         for p in patents[:25]:
+            source_date, date_provenance = normalize_patent_date(p.get("patent_date"))
             rows.append(
                 self.make_evidence(
                     company,
                     evidence_text=p.get("patent_title", ""),
                     source_url=f"https://patents.google.com/patent/US{p.get('patent_id')}",
-                    source_date=p.get("patent_date"),
+                    source_date=source_date,
                     evidence_title=p.get("patent_title"),
-                    metadata={"patent_id": p.get("patent_id"), "assignees": p.get("assignees"), "total_hits": total_hits},
+                    metadata={
+                        "patent_id": p.get("patent_id"),
+                        "assignees": p.get("assignees"),
+                        "total_hits": total_hits,
+                        "date_provenance": date_provenance,
+                    },
                 )
             )
         inserted = repo.insert_evidence(conn, rows)

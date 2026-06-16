@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..dates import normalize_publication_year
 from ..config import settings
 from ..db import repository as repo
 from ..extraction import content_hash
@@ -54,14 +55,19 @@ class ResearchCollector(Collector):
             if not title:
                 continue
             abstract = p.get("abstract") or ""
+            source_date, date_provenance = normalize_publication_year(p.get("year"))
             rows.append(
                 self.make_evidence(
                     company,
                     evidence_text=f"{title}. {abstract[:1200]}",
                     source_url=p.get("url"),
-                    source_date=str(p.get("year") or ""),
+                    source_date=source_date,
                     evidence_title=title,
-                    metadata={"venue": p.get("venue"), "citationCount": p.get("citationCount")},
+                    metadata={
+                        "venue": p.get("venue"),
+                        "citationCount": p.get("citationCount"),
+                        "date_provenance": date_provenance,
+                    },
                 )
             )
         inserted = repo.insert_evidence(conn, rows)
