@@ -2,6 +2,18 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Phase 1 Block A: platform registry implemented (Steps 1.2–1.8)
+
+- **Registry loader:** `platforms.py` with schema validation; unit tests in
+  `test_platforms.py`.
+- **Wired consumers:** `sources.profile_for` reads reliability from YAML;
+  `registry_gate` filters collectors by `enabled`/`phase` and auth rules;
+  collectors declare `platform_id` matching registry `id`.
+- **CLI:** `ai-collect show-platforms [--all] [--phase N]` — no DB required.
+- **Docs synced:** `data-sources.md` tables match `config/platforms.yaml`;
+  optional `scripts/sync_platform_docs.py` for future sync.
+- Test suite: 78 tests.
+
 ## 2026-06-16 — Phase 1 Step 1.1: platform registry YAML
 
 - Added `config/platforms.yaml`: 2 universe loaders, 6 Phase 1 platforms (enabled),

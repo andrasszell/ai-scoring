@@ -34,6 +34,7 @@ def _latest_annual_filing(submissions: dict) -> dict | None:
 
 class SecFilingsCollector(Collector):
     name = "sec_filings"
+    platform_id = "sec_edgar"
     version = "1.0.0"
     source_type = "sec_annual_filing"
     source_name = "SEC EDGAR"

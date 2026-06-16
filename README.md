@@ -38,10 +38,16 @@ Edit `.env` and set at least the SEC contact (required by EDGAR fair-access):
 SEC_USER_AGENT="Your Name your.email@example.com"
 ```
 
-Optional API keys — full approved platform matrix:
-[`docs/data-collection-initial-plan.md` §6A](docs/data-collection-initial-plan.md#6a-data-platform-decisions),
-operational detail in [`docs/data-sources.md`](docs/data-sources.md).
-Collectors lacking their key are **skipped gracefully** and record an
+Optional API keys — approved platforms live in
+[`config/platforms.yaml`](config/platforms.yaml) (source of truth). Operational
+detail: [`docs/data-sources.md`](docs/data-sources.md). Inspect runtime key status:
+
+```bash
+ai-collect show-platforms          # phase 1 enabled platforms
+ai-collect show-platforms --all    # include disabled phase 2/3 stubs
+```
+
+Collectors lacking a required key are **skipped gracefully** and record an
 `api_key_missing` status — never a silent failure.
 
 ```bash
@@ -53,16 +59,8 @@ PATENTSVIEW_API_KEY="..."      # AI patent activity (PatentsView Search API)
 
 ### Which source needs which key
 
-Summary — see [`data-sources.md`](docs/data-sources.md) for the full table.
-
-| Source key | Collector | Source | Key required? |
-|---|---|---|---|
-| `sec` | `sec_filings` | SEC EDGAR (10-K, 20-F, 40-F + amendments) | No (just `SEC_USER_AGENT`) |
-| `earnings` | `earnings_calls` | Financial Modeling Prep | `FMP_API_KEY` |
-| `products` | `web_products` | Google via SerpAPI | `SERPAPI_API_KEY` |
-| `hiring` | `hiring_jobs` | Google Jobs via SerpAPI (incl. LinkedIn) | `SERPAPI_API_KEY` |
-| `patents` | `patents` | PatentsView Search API | `PATENTSVIEW_API_KEY` |
-| `research` | `research` | Semantic Scholar | Optional (rate-limited without) |
+See [`docs/data-sources.md`](docs/data-sources.md) for the full platform table (synced
+from the registry). Quick check: `ai-collect show-platforms`.
 
 ## Collect evidence (`ai-collect`)
 
@@ -73,6 +71,7 @@ ai-collect collect --ticker MSFT NVDA       # specific companies (all sources)
 ai-collect collect --source sec research    # limit to specific sources
 ai-collect collect --all                    # every loaded company
 ai-collect status                           # latest status per company/source
+ai-collect show-platforms                   # registry + API key status (no DB)
 ai-collect validate                         # audit corpus: rule violations + coverage
 ai-collect reprocess --source sec           # re-extract evidence from stored docs (no network)
 ```
@@ -148,7 +147,7 @@ migration runner in `evidence_collection/db/migrations.py`):
 src/
   evidence_collection/        # Team 1 — ai-collect
     cli.py  runner.py  http.py  extraction.py  config.py  logging_config.py
-    status.py  models.py  exporters.py
+    status.py  models.py  exporters.py  platforms.py  registry_gate.py
     db/         connection.py  migrations.py  repository.py
     universe/   sp500.py  entity.py
     collectors/ base.py  sec_filings.py  earnings.py  serpapi.py  patents.py  research.py
@@ -173,7 +172,9 @@ CI runs the tests on Python 3.10–3.12 via GitHub Actions.
 
 - **Phase 0 (done):** separate collection from scoring; standardize evidence +
   document schema; add collector runs/status, raw-response preservation, clean exports.
-- **Phase 1:** follow [`docs/phase-1-development-plan.md`](docs/phase-1-development-plan.md) block-by-block.
+- **Phase 1 Block A (done):** platform registry (`config/platforms.yaml`), loader,
+  wired collectors/sources, `show-platforms`, docs synced. Next: Blocks B–D in
+  [`docs/phase-1-development-plan.md`](docs/phase-1-development-plan.md).
 - **Phase 2:** high-value sources (technical blogs, docs, GitHub, press, case studies).
 - **Phase 3:** scale to the full S&P 500 with refresh + freshness monitoring.
 - **Phase 4:** versioned evidence snapshots + field-definition docs for the inference team.

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import time
 
-from .collectors import Collector
+from .collectors.base import Collector
+from .registry_gate import collector_gate
 from .config import settings
 from .db import repository as repo
 from .logging_config import get_logger
@@ -35,7 +36,8 @@ def run_collection(
         for collector in collectors:
             started = time.time()
             try:
-                result = collector.collect(ctx, company)
+                blocked = collector_gate(collector)
+                result = blocked if blocked is not None else collector.collect(ctx, company)
             except Exception as exc:  # noqa: BLE001 - never abort a run
                 logger.exception("collector %s failed for %s", collector.name, ticker)
                 result = CollectorResult(CollectionStatus.SOURCE_UNAVAILABLE, message=f"unhandled: {exc}")

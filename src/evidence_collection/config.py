@@ -64,6 +64,9 @@ class Settings:
     request_timeout: int = int(os.getenv("REQUEST_TIMEOUT", "30"))
     max_candidate_paragraphs: int = int(os.getenv("MAX_CANDIDATE_PARAGRAPHS", "40"))
     log_level: str = os.getenv("AI_DEPTH_LOG_LEVEL", "INFO")
+    platforms_yaml: Path | None = (
+        Path(p) if (p := os.getenv("PLATFORMS_YAML", "").strip()) else None
+    )
 
 
 settings = Settings()

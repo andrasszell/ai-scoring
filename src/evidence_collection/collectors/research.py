@@ -17,6 +17,7 @@ class ResearchCollector(Collector):
     but is heavily rate-limited; an API key raises the limits)."""
 
     name = "research"
+    platform_id = "semantic_scholar"
     version = "1.0.0"
     source_type = "research_paper"
     source_name = "Semantic Scholar"

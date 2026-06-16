@@ -21,6 +21,7 @@ class Collector(ABC):
     version: str = "0.0.0"
     source_type: str = "unknown"
     source_name: str | None = None
+    platform_id: str | None = None
 
     @abstractmethod
     def collect(self, ctx: CollectionContext, company: dict) -> CollectorResult:

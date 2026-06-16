@@ -10,6 +10,7 @@ from ..models import CollectionContext, CollectorResult
 from ..status import CollectionStatus
 from ..universe.entity import clean_company_name
 from .base import Collector
+from ..registry_gate import api_key_missing_result
 
 PATENTSVIEW = "https://search.patentsview.org/api/v1/patent/"
 
@@ -21,6 +22,7 @@ class PatentsCollector(Collector):
     """
 
     name = "patents"
+    platform_id = "patentsview"
     version = "1.0.0"
     source_type = "patent"
     source_name = "PatentsView"
@@ -29,7 +31,7 @@ class PatentsCollector(Collector):
         conn = ctx.conn
         ticker = company["ticker"]
         if not settings.patentsview_api_key:
-            return CollectorResult(CollectionStatus.API_KEY_MISSING, message="missing_patentsview_api_key")
+            return api_key_missing_result(self)
 
         name = clean_company_name(company.get("company_name", ""))
         query = {

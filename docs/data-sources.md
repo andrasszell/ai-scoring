@@ -3,60 +3,100 @@
 Operational companion to the platform registry and
 **[§6A Data Platform Decisions](data-collection-initial-plan.md#6a-data-platform-decisions)**.
 
+> **Synced from [`config/platforms.yaml`](../config/platforms.yaml) on 2026-06-16**
+> (registry v1.0). Do not edit platform tables here independently — update the YAML,
+> then re-sync this doc and add a change-log entry. Regenerate tables with:
+> `python scripts/sync_platform_docs.py --all`
+
 ## Where platform metadata lives
 
-| When | Source of truth | How to change |
+| Source of truth | Location | How to change |
 |---|---|---|
-| **Now (interim)** | This doc + §6A tables in the initial plan | Edit both + change-log |
-| **Phase 1 (live file)** | [`config/platforms.yaml`](../config/platforms.yaml) | Edit YAML; sync this doc after loader wired (Step 1.8) |
+| **Platform registry (live)** | [`config/platforms.yaml`](../config/platforms.yaml) | Edit YAML → collector/tests → sync this doc → change-log |
+| Runtime loader | `src/evidence_collection/platforms.py` | Schema validation at load time |
+| Reliability defaults | Registry first → `sources.py` fallback | Set per-platform fields in YAML |
+| CLI inspection | `ai-collect show-platforms [--all] [--phase N]` | Read-only; no DB required |
 
 See **[§6A.4 Platform registry](data-collection-initial-plan.md#6a4-platform-registry-single-source-of-truth)**
-for the schema, consumers, and the five-step change workflow.
+for schema, consumers, and the five-step change workflow.
 
 **Rule:** do not add platform details only to markdown or only to Python constants.
-The registry (once live) is the approval record; collectors implement fetch logic.
+The registry is the approval record; collectors implement fetch logic.
 
 ---
 
-## Phase 1 — approved platforms (interim table)
+## Phase 1 — approved platforms
 
-> Will be generated from `config/platforms.yaml` once the registry is implemented.
+### Company universe loaders
 
-### Company universe
+| ID | Display name | Vendor | Env | Phase | Enabled | CLI |
+|---|---|---|---|---|---|---|
+| `wikipedia_sp500` | Wikipedia S&P 500 constituents | Wikimedia Foundation | `SEC_USER_AGENT` (required) | 1 | yes | `load-companies` |
+| `sec_company_tickers` | SEC company tickers | U.S. Securities and Exchange Commission | `SEC_USER_AGENT` (required) | 1 | yes | `load-companies` |
 
-| Loader | Platform | Env | Collector CLI |
-|---|---|---|---|
-| S&P 500 list | Wikipedia (HTML table) | `SEC_USER_AGENT` (HTTP User-Agent) | `ai-collect load-companies` |
-| CIK + SEC filer fallback | SEC `company_tickers.json` | `SEC_USER_AGENT` | (auto on `analyze` fallback) |
+CLI: `ai-collect load-companies` merges Wikipedia sector/industry with SEC CIKs.
+The SEC filer list is also used as the fallback universe for `ai-collect analyze`.
 
-### Evidence collectors
+### Evidence collectors (Phase 1 — enabled)
 
-| Collector | `source_type` | Platform / API | Env key | Required? |
-|---|---|---|---|---|
-| `sec_filings` | `sec_annual_filing` | SEC EDGAR | `SEC_USER_AGENT` | Yes (contact string) |
-| `earnings_calls` | `earnings_call_transcript` | Financial Modeling Prep | `FMP_API_KEY` | Optional (skipped if missing) |
-| `web_products` | `web_search_product` | SerpAPI → Google web | `SERPAPI_API_KEY` | Optional |
-| `hiring_jobs` | `job_posting` | SerpAPI → Google Jobs | `SERPAPI_API_KEY` | Optional |
-| `patents` | `patent` | PatentsView Search API | `PATENTSVIEW_API_KEY` | Optional |
-| `research` | `research_paper` | Semantic Scholar Graph API | `SEMANTIC_SCHOLAR_API_KEY` | Optional (429-prone without) |
+| ID | Collector | CLI | `source_type` | Platform | Env | Category | Reliability | Conf. | Cost |
+|---|---|---|---|---|---|---|---|---|---|
+| `sec_edgar` | `sec_filings` | `sec` | `sec_annual_filing` | SEC EDGAR | `SEC_USER_AGENT` (required) | regulatory_filing | high | 0.75 | free |
+| `fmp_transcripts` | `earnings_calls` | `earnings` | `earnings_call_transcript` | Financial Modeling Prep | `FMP_API_KEY` (optional) | official_company | high | 0.70 | paid |
+| `serpapi_web` | `web_products` | `products` | `web_search_product` | SerpAPI Google web | `SERPAPI_API_KEY` (optional) | news_article | low | 0.40 | paid |
+| `serpapi_jobs` | `hiring_jobs` | `hiring` | `job_posting` | SerpAPI Google Jobs | `SERPAPI_API_KEY` (optional) | job_posting | medium | 0.50 | paid |
+| `patentsview` | `patents` | `patents` | `patent` | PatentsView Search API | `PATENTSVIEW_API_KEY` (optional) | regulatory_filing | medium | 0.55 | free |
+| `semantic_scholar` | `research` | `research` | `research_paper` | Semantic Scholar Graph API | `SEMANTIC_SCHOLAR_API_KEY` (optional) | third_party_database | medium | 0.45 | free |
 
 Run a subset: `ai-collect collect --source sec hiring --ticker MSFT`
 
-Future: `ai-collect show-platforms` — list all registry entries with key status.
+Inspect registry + key status: `ai-collect show-platforms` (phase 1 enabled) or
+`ai-collect show-platforms --all` (all phases, including disabled stubs).
+
+Collectors declare matching `platform_id` in code (see `collectors/base.py`).
+
+---
+
+## Phase 2 — planned (registry stubs, disabled)
+
+| ID | Collector | `source_type` | Display name | Enabled |
+|---|---|---|---|---|
+| `github_repos` | `github_repos` | `github_repository` | GitHub public repositories | no |
+| `press_releases` | `press_releases` | `press_release` | Company press releases | no |
+| `product_documentation` | `product_docs` | `product_documentation` | Product and developer documentation | no |
+
+Collectors not implemented — YAML-only until adapters exist.
+
+---
+
+## Phase 3 — premium vendors (evaluate — not approved)
+
+Registered in `platforms.yaml` with `phase: 3`, `enabled: false`:
+
+| ID | Collector | Vendor | Env | Notes |
+|---|---|---|---|---|
+| `lightcast` | `lightcast_hiring` | Lightcast | `LIGHTCAST_API_KEY` (required) | Workforce/hiring alternative to SerpAPI jobs |
+| `alphasense` | `alphasense_transcripts` | AlphaSense | `ALPHASENSE_API_KEY` (required) | Premium transcript/search alternative to FMP |
+| `revelio` | `revelio_workforce` | Revelio Labs | `REVELIO_API_KEY` (required) | Workforce/hiring analytics |
+
+See [§6A.1 evaluation criteria](data-collection-initial-plan.md#6a1-evidence-source-platforms-phase-1--approved).
+
+Other candidates from the strategic plan (not yet in registry): Coresignal, Proxycurl,
+LinkedIn Talent Insights, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith.
 
 ---
 
 ## Source categories (controlled vocabulary)
 
 Applied automatically on every evidence row (`source_category`,
-`source_reliability`, `confidence_initial`). Defaults from registry →
-`src/evidence_collection/sources.py`.
+`source_reliability`, `confidence_initial`). Values loaded from registry via
+`src/evidence_collection/sources.py` (`profile_for`).
 
 `official_company`, `regulatory_filing`, `job_posting`, `press_release`,
 `technical_blog`, `product_documentation`, `news_article`,
 `third_party_database`, `social_media`, `unknown`.
 
-## Reliability and initial confidence (Phase 1 defaults)
+## Reliability and initial confidence (from registry)
 
 | `source_type` | Category | Reliability | `confidence_initial` |
 |---|---|---|---|
@@ -80,17 +120,7 @@ Applied automatically on every evidence row (`source_category`,
 
 A row whose URL is on the company's own `website_domain` is upgraded to
 `official_company / high` (`sources.refine_for_url`). Backfilling
-`companies.website_domain` is a Phase 1 task.
-
----
-
-## Phase 3 premium vendors (evaluate — not approved)
-
-Register in `platforms.yaml` with `phase: 3`, `enabled: false` when the registry
-exists. See [§6A.1 evaluation criteria](data-collection-initial-plan.md#6a1-evidence-source-platforms-phase-1--approved).
-
-Candidates: Lightcast, Revelio, Coresignal, Proxycurl, LinkedIn Talent Insights,
-AlphaSense, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith.
+`companies.website_domain` is a Phase 1 task (Block B).
 
 ---
 
@@ -101,4 +131,4 @@ Follow **[§6A.4 change workflow](data-collection-initial-plan.md#6a4-platform-r
 1. Edit `config/platforms.yaml`
 2. Update collector adapter (if needed)
 3. Tests + `ai-collect validate`
-4. Sync this doc + `change-log.md`
+4. Sync this doc (`python scripts/sync_platform_docs.py --all`) + `change-log.md`

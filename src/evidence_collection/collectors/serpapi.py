@@ -6,6 +6,7 @@ import time
 from urllib.parse import urlparse
 
 from ..config import settings
+from ..registry_gate import api_key_missing_result
 from ..db import repository as repo
 from ..extraction import content_hash
 from ..http import get
@@ -77,6 +78,7 @@ def parse_job_rows(collector, company: dict, query: str, jobs_results: list[dict
 
 class ProductServiceCollector(Collector):
     name = "web_products"
+    platform_id = "serpapi_web"
     version = "1.0.0"
     source_type = "web_search_product"
     source_name = "Google (SerpAPI)"
@@ -85,7 +87,7 @@ class ProductServiceCollector(Collector):
         conn = ctx.conn
         ticker = company["ticker"]
         if not settings.serpapi_api_key:
-            return CollectorResult(CollectionStatus.API_KEY_MISSING, message="missing_serpapi_api_key")
+            return api_key_missing_result(self)
         query = f'"{search_name(company)}" ({AI_TERMS}) product OR platform OR solution OR service'
         params = {"engine": "google", "q": query, "api_key": settings.serpapi_api_key, "num": num}
         resp = get(SERPAPI, params=params)
@@ -114,6 +116,7 @@ class ProductServiceCollector(Collector):
 
 class HiringCollector(Collector):
     name = "hiring_jobs"
+    platform_id = "serpapi_jobs"
     version = "1.0.0"
     source_type = "job_posting"
     source_name = "Google Jobs (SerpAPI)"
@@ -136,7 +139,7 @@ class HiringCollector(Collector):
         conn = ctx.conn
         ticker = company["ticker"]
         if not settings.serpapi_api_key:
-            return CollectorResult(CollectionStatus.API_KEY_MISSING, message="missing_serpapi_api_key")
+            return api_key_missing_result(self)
         query = f"{search_name(company)} ({JOBS_QUERY_ROLES})"
         jobs_results, api_calls = self._fetch_jobs(ctx, ticker, query)
 

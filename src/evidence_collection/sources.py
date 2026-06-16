@@ -36,9 +36,7 @@ class SourceProfile:
     confidence_initial: float
 
 
-# Keyed by a collector's `source_type`. Defaults are deliberately conservative;
-# per-domain refinement (e.g. official_company when the URL is the company's own
-# domain) is a Phase-1 improvement tracked in the change log.
+# Fallback when registry is unavailable or has no entry for a source_type.
 _PROFILES: dict[str, SourceProfile] = {
     "sec_annual_filing": SourceProfile(SourceCategory.REGULATORY_FILING, Reliability.HIGH, 0.75),
     "earnings_call_transcript": SourceProfile(SourceCategory.OFFICIAL_COMPANY, Reliability.HIGH, 0.70),
@@ -50,9 +48,55 @@ _PROFILES: dict[str, SourceProfile] = {
 
 _DEFAULT = SourceProfile(SourceCategory.UNKNOWN, Reliability.UNKNOWN, 0.30)
 
+_REGISTRY_INDEX: dict[str, SourceProfile] | None = None
+
+
+def reset_profile_cache() -> None:
+    """Clear cached registry profiles (for tests)."""
+    global _REGISTRY_INDEX
+    _REGISTRY_INDEX = None
+
+
+def _platform_precedence(platform) -> tuple[int, int, int]:
+    """Rank platforms sharing a source_type; higher wins."""
+    return (
+        1 if platform.enabled else 0,
+        1 if platform.phase == 1 else 0,
+        -platform.phase,
+    )
+
+
+def _build_registry_index() -> dict[str, SourceProfile]:
+    try:
+        from .platforms import load_registry
+
+        registry = load_registry()
+    except (FileNotFoundError, ValueError, OSError):
+        return {}
+    best: dict[str, tuple[tuple[int, int, int], SourceProfile]] = {}
+    for platform in registry.platforms:
+        profile = SourceProfile(
+            platform.source_category,
+            platform.source_reliability,
+            platform.confidence_initial,
+        )
+        rank = _platform_precedence(platform)
+        prev = best.get(platform.source_type)
+        if prev is None or rank > prev[0]:
+            best[platform.source_type] = (rank, profile)
+    return {source_type: profile for source_type, (_, profile) in best.items()}
+
+
+def _registry_profiles() -> dict[str, SourceProfile]:
+    global _REGISTRY_INDEX
+    if _REGISTRY_INDEX is None:
+        _REGISTRY_INDEX = _build_registry_index()
+    return _REGISTRY_INDEX
+
 
 def profile_for(source_type: str) -> SourceProfile:
-    return _PROFILES.get(source_type, _DEFAULT)
+    """Return source metadata from config/platforms.yaml, with code fallback."""
+    return _registry_profiles().get(source_type) or _PROFILES.get(source_type, _DEFAULT)
 
 
 def refine_for_url(profile: SourceProfile, url: str | None, website_domain: str | None) -> SourceProfile:

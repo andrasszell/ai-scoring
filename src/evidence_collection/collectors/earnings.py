@@ -11,6 +11,7 @@ from ..http import get
 from ..models import CollectionContext, CollectorResult
 from ..status import CollectionStatus
 from .base import Collector
+from ..registry_gate import api_key_missing_result
 
 BASE = "https://financialmodelingprep.com/api/v3"
 LOOKBACK_YEARS = 6
@@ -24,6 +25,7 @@ class EarningsCallCollector(Collector):
     """
 
     name = "earnings_calls"
+    platform_id = "fmp_transcripts"
     version = "1.0.0"
     source_type = "earnings_call_transcript"
     source_name = "Financial Modeling Prep"
@@ -32,7 +34,7 @@ class EarningsCallCollector(Collector):
         conn = ctx.conn
         ticker = company["ticker"]
         if not settings.fmp_api_key:
-            return CollectorResult(CollectionStatus.API_KEY_MISSING, message="missing_fmp_api_key")
+            return api_key_missing_result(self)
 
         url = f"{BASE}/earning_call_transcript"
         repo.delete_evidence(conn, ticker, self.name)

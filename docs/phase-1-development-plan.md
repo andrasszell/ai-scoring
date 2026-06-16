@@ -56,7 +56,7 @@ are met. Each step ends with a suggested git commit message.
 
 *Goal: one YAML file drives which platforms exist, whether they run, and their metadata.*
 
-### Step 1.1 — Create `config/platforms.yaml` (static data only)
+### Step 1.1 — Create `config/platforms.yaml` (static data only) ✅
 
 **Depends on:** Prerequisites
 
@@ -91,9 +91,9 @@ No Python changes yet.
 
 **Done when:**
 
-- [ ] YAML parses without error (`python -c "import yaml; yaml.safe_load(open('config/platforms.yaml'))"` — add `pyyaml` only if not already available; prefer stdlib-only review via eyeball if you defer loader to 1.2).
-- [ ] All 6 active collectors + 2 loaders documented with `phase: 1`, `enabled: true`.
-- [ ] Phase 2/3 entries present but `enabled: false`.
+- [x] YAML parses without error.
+- [x] All 6 active collectors + 2 loaders documented with `phase: 1`, `enabled: true`.
+- [x] Phase 2/3 entries present but `enabled: false`.
 
 **Verify:** Manual review of YAML against §6A.1 tables in initial plan.
 
@@ -101,7 +101,7 @@ No Python changes yet.
 
 ---
 
-### Step 1.2 — Platform loader module + dataclasses
+### Step 1.2 — Platform loader module + dataclasses ✅
 
 **Depends on:** Step 1.1
 
@@ -128,11 +128,12 @@ No Python changes yet.
 **Modify:**
 
 - `src/evidence_collection/config.py` — optional `platforms_yaml: Path` setting
+- `pyproject.toml` — add `pyyaml` dependency
 
 **Done when:**
 
-- [ ] `load_registry()` returns typed objects for all entries in YAML.
-- [ ] Invalid YAML (missing field, duplicate id) raises clear `ValueError`.
+- [x] `load_registry()` returns typed objects for all entries in YAML.
+- [x] Invalid YAML (missing field, duplicate id) raises clear `ValueError`.
 
 **Verify:**
 
@@ -149,7 +150,7 @@ print('ok', [p.id for p in r.platforms_enabled()])
 
 ---
 
-### Step 1.3 — Unit tests for registry loader
+### Step 1.3 — Unit tests for registry loader ✅
 
 **Depends on:** Step 1.2
 
@@ -172,8 +173,8 @@ print('ok', [p.id for p in r.platforms_enabled()])
 
 **Done when:**
 
-- [ ] `pytest tests/unit/test_platforms.py -q` passes.
-- [ ] Full suite still passes.
+- [x] `pytest tests/unit/test_platforms.py -q` passes.
+- [x] Full suite still passes.
 
 **Verify:** `pytest -q`
 
@@ -181,7 +182,7 @@ print('ok', [p.id for p in r.platforms_enabled()])
 
 ---
 
-### Step 1.4 — Wire `sources.py` to registry
+### Step 1.4 — Wire `sources.py` to registry ✅
 
 **Depends on:** Step 1.3
 
@@ -194,8 +195,8 @@ print('ok', [p.id for p in r.platforms_enabled()])
 
 **Done when:**
 
-- [ ] `make_evidence` sets `source_category`, `source_reliability`, `confidence_initial` from registry values for SEC filings.
-- [ ] Existing tests pass (`test_serpapi`, `test_end_to_end`).
+- [x] `make_evidence` sets `source_category`, `source_reliability`, `confidence_initial` from registry values for SEC filings.
+- [x] Existing tests pass (`test_serpapi`, `test_end_to_end`).
 
 **Verify:** `pytest tests/unit/test_serpapi.py tests/integration/test_end_to_end.py -q`
 
@@ -203,7 +204,7 @@ print('ok', [p.id for p in r.platforms_enabled()])
 
 ---
 
-### Step 1.5 — Wire collector enablement + env-key checks to registry
+### Step 1.5 — Wire collector enablement + env-key checks to registry ✅
 
 **Depends on:** Step 1.4
 
@@ -217,8 +218,8 @@ print('ok', [p.id for p in r.platforms_enabled()])
 
 **Done when:**
 
-- [ ] Setting `enabled: false` for `web_products` in YAML causes `collect --source products` to skip it with status `skipped` or not offer it.
-- [ ] Missing `SERPAPI_API_KEY` still yields `api_key_missing` with message from registry.
+- [x] Setting `enabled: false` for `web_products` in YAML causes `collect --source products` to skip it with status `skipped` or not offer it.
+- [x] Missing `SERPAPI_API_KEY` still yields `api_key_missing` with message from registry.
 
 **Verify:**
 
@@ -234,7 +235,7 @@ pytest -q
 
 ---
 
-### Step 1.6 — Add `ai-collect show-platforms` command
+### Step 1.6 — Add `ai-collect show-platforms` command ✅
 
 **Depends on:** Step 1.5
 
@@ -248,9 +249,9 @@ pytest -q
 
 **Done when:**
 
-- [ ] `ai-collect show-platforms` runs without DB initialization.
-- [ ] Output matches `config/platforms.yaml` entries.
-- [ ] Shows `missing` for unset optional keys.
+- [x] `ai-collect show-platforms` runs without DB initialization.
+- [x] Output matches `config/platforms.yaml` entries.
+- [x] Shows `missing` for unset optional keys.
 
 **Verify:**
 
@@ -263,7 +264,7 @@ ai-collect show-platforms --all
 
 ---
 
-### Step 1.7 — Register Phase 2/3 placeholders + collector `platform_id`
+### Step 1.7 — Register Phase 2/3 placeholders + collector `platform_id` ✅
 
 **Depends on:** Step 1.6
 
@@ -277,8 +278,8 @@ ai-collect show-platforms --all
 
 **Done when:**
 
-- [ ] Every active collector has matching `platform_id` in YAML and code.
-- [ ] `show-platforms --all` lists Phase 2/3 entries as disabled.
+- [x] Every active collector has matching `platform_id` in YAML and code.
+- [x] `show-platforms --all` lists Phase 2/3 entries as disabled.
 
 **Verify:** `ai-collect show-platforms --all | head -20`
 
@@ -286,7 +287,7 @@ ai-collect show-platforms --all
 
 ---
 
-### Step 1.8 — Sync docs from registry
+### Step 1.8 — Sync docs from registry ✅
 
 **Depends on:** Step 1.7
 
@@ -304,8 +305,8 @@ ai-collect show-platforms --all
 
 **Done when:**
 
-- [ ] `data-sources.md` platform table matches YAML.
-- [ ] §6A.1 in initial plan references registry as live SSOT (not “planned”).
+- [x] `data-sources.md` platform table matches YAML.
+- [x] §6A.1 in initial plan references registry as live SSOT (not “planned”).
 
 **Verify:** Diff YAML vs data-sources.md manually.
 
@@ -684,13 +685,13 @@ Copy this to your working notes and tick as you go:
 ```text
 Block A — Platform registry
   [x] 1.1  platforms.yaml
-  [ ] 1.2  loader module
-  [ ] 1.3  loader tests
-  [ ] 1.4  sources.py wired
-  [ ] 1.5  collector enablement
-  [ ] 1.6  show-platforms CLI
-  [ ] 1.7  platform_id on collectors
-  [ ] 1.8  docs synced
+  [x] 1.2  loader module
+  [x] 1.3  loader tests
+  [x] 1.4  sources.py wired
+  [x] 1.5  collector enablement
+  [x] 1.6  show-platforms CLI
+  [x] 1.7  platform_id on collectors
+  [x] 1.8  docs synced
 
 Block B — Entity metadata
   [ ] 2.1  website_domain

@@ -214,9 +214,10 @@ This section describes **which platforms** the collection layer uses: external d
 providers, internal storage, and the handoff to Team 2.
 
 **Authoritative registry:** platform metadata lives in
-[`config/platforms.yaml`](../config/platforms.yaml), loaded at runtime (Step 1.2+).
-See **§6A.4** for schema and change workflow. Tables below remain human-readable
-summary; edit the YAML to change approved platforms.
+[`config/platforms.yaml`](../config/platforms.yaml), loaded at runtime (live since
+Phase 1 Step 1.8). See **§6A.4** for schema and change workflow. Tables below are
+a human-readable summary; **edit the YAML** to change approved platforms, then sync
+[`data-sources.md`](data-sources.md).
 
 ### 6A.1 Evidence source platforms (Phase 1 — approved)
 
@@ -248,15 +249,18 @@ CLI: `ai-collect load-companies` (Wikipedia + SEC CIK merge).
 companies) is complete and gaps are documented. Swapping or adding a platform
 follows the **§6A.4 change workflow** (registry entry + collector + tests + docs).
 
-#### Phase 2 sources (planned — platform TBD)
+#### Phase 2 sources (planned — registered, disabled)
 
-Sources from §6 Phase 2 (GitHub, press releases, product docs, etc.) do **not** yet
-have an approved vendor. Each will get a row here before implementation.
+Stubs in [`config/platforms.yaml`](../config/platforms.yaml): `github_repos`,
+`press_releases`, `product_documentation` (`enabled: false`, `phase: 2`). Collectors
+not implemented — adding a vendor follows the **§6A.4 change workflow**.
 
-#### Phase 3 premium vendors (evaluate — not approved)
+#### Phase 3 premium vendors (evaluate — registered, disabled)
 
-Listed in §6 Phase 3 (Lightcast, Revelio, Coresignal, Proxycurl, LinkedIn Talent
-Insights, AlphaSense, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith).
+Stubs in the registry: `lightcast`, `alphasense`, `revelio` (`enabled: false`,
+`phase: 3`). Additional candidates from §6 Phase 3 (Coresignal, Proxycurl, LinkedIn
+Talent Insights, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith) are listed
+in [`data-sources.md`](data-sources.md) but not yet in YAML.
 
 **Evaluation criteria** (all must be documented before approval):
 

@@ -10,6 +10,8 @@ from .db import repository as repo
 from .exporters import export_evidence_jsonl, export_table_csv
 from .logging_config import get_logger, setup_logging
 from .reprocess import reprocess_documents
+from .registry_gate import get_platform_registry, reset_registry_cache
+from .platforms import Platform, runtime_key_status
 from .runner import run_collection
 from .universe import fetch_sec_companies, fetch_sp500_with_ciks, match_rows, resolve_company
 
@@ -212,6 +214,37 @@ def cmd_status(args) -> None:
               f"{r['evidence_count']:>5} {r['documents_count']:>5}  {r['message'] or ''}")
 
 
+def format_platforms_table(platforms: list[Platform], *, registry_version: str) -> str:
+    lines = [
+        f"Platform registry v{registry_version} ({len(platforms)} platform(s))",
+        "",
+        f"{'ID':<20} {'COLLECTOR':<16} {'PHASE':>5} {'EN':>3} {'VENDOR':<26} "
+        f"{'ENV_KEY':<24} {'KEY_STATUS':<12} {'COST':<6}",
+    ]
+    for platform in platforms:
+        env_key = platform.auth.env_key or "-"
+        enabled = "yes" if platform.enabled else "no"
+        lines.append(
+            f"{platform.id:<20} {platform.collector:<16} {platform.phase:>5} {enabled:>3} "
+            f"{platform.vendor[:26]:<26} {env_key:<24} "
+            f"{runtime_key_status(platform.auth):<12} {platform.cost_model:<6}"
+        )
+    return "\n".join(lines)
+
+
+def cmd_show_platforms(args) -> None:
+    registry = get_platform_registry()
+    platforms = list(registry.platforms)
+    phase = args.phase
+    if phase is None and not args.all:
+        phase = 1
+    if phase is not None:
+        platforms = [p for p in platforms if p.phase == phase]
+    if not args.all:
+        platforms = [p for p in platforms if p.enabled]
+    print(format_platforms_table(platforms, registry_version=registry.registry_version))
+
+
 # ---------------------------------------------------------------------------
 # Parser
 # ---------------------------------------------------------------------------
@@ -283,6 +316,11 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("status", help="Show the latest collection status per company/source.")
     s.add_argument("--ticker", nargs="*")
     s.set_defaults(func=cmd_status)
+
+    s = sub.add_parser("show-platforms", help="List platform registry entries and API key status.")
+    s.add_argument("--phase", type=int, default=None, help="Filter by phase (default: 1, or all phases with --all).")
+    s.add_argument("--all", action="store_true", help="Include disabled platforms (all phases unless --phase set).")
+    s.set_defaults(func=cmd_show_platforms)
     return p
 
 
