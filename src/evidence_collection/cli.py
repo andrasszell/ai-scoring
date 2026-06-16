@@ -15,10 +15,12 @@ from .platforms import Platform, runtime_key_status
 from .runner import run_collection
 from .universe import (
     enrich_companies,
+    ensure_validation_companies,
     fetch_sec_companies,
     load_universe,
     match_rows,
     resolve_company,
+    validation_tickers,
 )
 
 logger = get_logger("evidence_collection.cli")
@@ -51,12 +53,20 @@ def cmd_init_db(args) -> None:
 def cmd_load_companies(args) -> None:
     conn = _conn()
     n, aliases = load_universe(conn, limit=args.limit)
+    if getattr(args, "validation_set", False):
+        companies, tickers = ensure_validation_companies(conn)
+        print(f"Validation set: {len(tickers)} tickers ensured in database "
+              f"({len(companies)} resolved).")
     conn.close()
     print(f"Loaded {n} companies into {settings.db_path} ({aliases} aliases from config)")
 
 
 def _select_companies(conn, args) -> tuple[list[dict], list[str] | None]:
     """Resolve the company set for a collect run. Returns (companies, requested)."""
+    if getattr(args, "validation_set", False):
+        companies, requested = ensure_validation_companies(conn)
+        print(f"Using Phase 1 validation set ({len(requested)} tickers).")
+        return companies, requested
     if getattr(args, "all", False):
         return repo.get_companies(conn), None
     if getattr(args, "ticker", None):
@@ -319,12 +329,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("load-companies", help="Load the company universe (S&P 500 + CIKs).")
     s.add_argument("--limit", type=int, default=None)
+    s.add_argument(
+        "--validation-set",
+        action="store_true",
+        help="After S&P load, ensure all tickers in config/validation_companies.yaml exist (SEC fallback).",
+    )
     s.set_defaults(func=cmd_load_companies)
 
     s = sub.add_parser("collect", help="Collect evidence for companies.")
     s.add_argument("--ticker", nargs="*", help="Tickers, e.g. MSFT NVDA. Default: top S&P 500.")
     s.add_argument("--limit", type=int, default=None, help="Collect first N loaded companies.")
     s.add_argument("--all", action="store_true", help="Collect every loaded company.")
+    s.add_argument(
+        "--validation-set",
+        action="store_true",
+        help="Collect all tickers from config/validation_companies.yaml (Phase 1 sample).",
+    )
     _add_source_flag(s)
     s.set_defaults(func=cmd_collect)
 

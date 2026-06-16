@@ -72,8 +72,10 @@ Inspect one company: `ai-collect validate-company MSFT`.
 ```bash
 ai-collect init-db                          # create DB + apply migrations
 ai-collect load-companies                   # load S&P 500 universe + CIKs + domains/aliases
+ai-collect load-companies --validation-set  # also ensure Phase 1 validation tickers (SEC fallback)
 ai-collect validate-company MSFT            # inspect identity, aliases, collection status
 ai-collect collect --ticker MSFT NVDA       # specific companies (all sources)
+ai-collect collect --validation-set         # Phase 1 sample (35 tickers from config)
 ai-collect collect --source sec research    # limit to specific sources
 ai-collect collect --all                    # every loaded company
 ai-collect status                           # latest status per company/source
@@ -178,8 +180,8 @@ CI runs the tests on Python 3.10–3.12 via GitHub Actions.
 
 - **Phase 0 (done):** separate collection from scoring; standardize evidence +
   document schema; add collector runs/status, raw-response preservation, clean exports.
-- **Phase 1 Block A (done):** platform registry (`config/platforms.yaml`), loader,
-  wired collectors/sources, `show-platforms`, docs synced. Next: Blocks B–D in
+- **Phase 1 (done):** platform registry, entity metadata, collector stabilization,
+  35-company validation sample (`collect --validation-set`). See
   [`docs/phase-1-development-plan.md`](docs/phase-1-development-plan.md).
 - **Phase 2:** high-value sources (technical blogs, docs, GitHub, press, case studies).
 - **Phase 3:** scale to the full S&P 500 with refresh + freshness monitoring.

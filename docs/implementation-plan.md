@@ -26,8 +26,8 @@ tracks current progress only.
   platform list; loader, tests, wired sources/collectors, `show-platforms`, docs synced.
 - [x] **Entity metadata (Block B):** `website_domain` + `company_aliases` from config;
   `validate-company` CLI; shared `load_universe()` on all entry points.
-- [ ] **Phase 1 — Stabilize core collectors + validation sample.** Deliverable:
-  high-quality evidence corpus for 25–50 companies (Blocks C–D).
+- [x] **Phase 1 — Stabilize core collectors + validation sample.** Deliverable:
+  high-quality evidence corpus for 25–50 companies (Blocks C–D). **35 companies, 991 evidence rows, 0 validate violations (2026-06-16).**
 - [ ] **Phase 2 — High-value sources:** add platforms via registry + new collectors.
 - [ ] **Phase 3 — Scale to full universe:** full S&P 500, API-cost tracking,
   incremental refresh, freshness monitoring, failed-source retry queue.
@@ -67,21 +67,21 @@ Edit config/platforms.yaml → collector adapter → tests → sync docs → val
 | B.2 | Seed `company_aliases` from config; use DB in `search_name` | [x] |
 | B.3 | Add `ai-collect validate-company` identity inspector | [x] |
 
-### 3. Collector stabilization (Block C)
+### 3. Collector stabilization (Block C — complete)
 
 | # | Task | Done |
 |---|---|---|
-| C.1 | Per-source `source_date` where API provides it (jobs, web, patents, research) | [ ] |
-| C.2 | Extend `reprocess` for any new document-backed sources | [ ] |
+| C.1 | Per-source `source_date` where API provides it (jobs, web, patents, research) | [x] |
+| C.2 | Extend `reprocess` for any new document-backed sources | [x] |
 
-### 4. Validation sample (Block D)
+### 4. Validation sample (Block D — complete)
 
 | # | Task | Done |
 |---|---|---|
-| D.1 | Run full collection for 25–50 companies (default mega-caps + sector spread) | [ ] |
-| D.2 | Capture `ai-collect validate` report (violations must be 0) | [ ] |
-| D.3 | Capture `ai-collect status` + export bundle for Team 2 review | [ ] |
-| D.4 | QA note: sample evidence accuracy per source (manual spot-check) | [ ] |
+| D.1 | Run full collection for 25–50 companies (default mega-caps + sector spread) | [x] |
+| D.2 | Capture `ai-collect validate` report (violations must be 0) | [x] |
+| D.3 | Capture `ai-collect status` + export bundle for Team 2 review | [x] |
+| D.4 | QA note: sample evidence accuracy per source (manual spot-check) | [x] |
 
 ---
 

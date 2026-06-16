@@ -4,6 +4,7 @@
 #
 # Keep separate from config/platforms.yaml — this is entity metadata, not a data platform.
 
+# DEFAULT_TICKERS (Block B)
 AAPL: apple.com
 MSFT: microsoft.com
 NVDA: nvidia.com
@@ -15,3 +16,36 @@ AVGO: broadcom.com
 TSLA: tesla.com
 BRK-B: berkshirehathaway.com
 JPM: jpmorganchase.com
+
+# Block D — large-cap sector spread
+UNH: unitedhealthgroup.com
+JNJ: jnj.com
+LLY: lilly.com
+BAC: bankofamerica.com
+GS: goldmansachs.com
+XOM: exxonmobil.com
+CVX: chevron.com
+WMT: walmart.com
+PG: pg.com
+KO: coca-cola.com
+
+# Block D — mid-cap AI
+PLTR: palantir.com
+CRWD: crowdstrike.com
+SNOW: snowflake.com
+DDOG: datadoghq.com
+ANET: arista.com
+
+# Block D — SEC fallback / non-index names
+ELAN: elanco.com
+PATH: uipath.com
+AI: c3.ai
+SOUN: soundhound.com
+UPST: upstart.com
+
+# Block D — additional large-cap tech
+ORCL: oracle.com
+IBM: ibm.com
+INTC: intel.com
+CSCO: cisco.com
+AMD: amd.com

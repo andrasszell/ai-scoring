@@ -556,8 +556,8 @@ pytest tests/integration/test_reprocess.py -q
 
 **Done when:**
 
-- [ ] YAML list reviewed and approved by you.
-- [ ] All tickers exist after `ai-collect load-companies` OR documented SEC fallback path.
+- [x] YAML list reviewed and approved by you.
+- [x] All tickers exist after `ai-collect load-companies` OR documented SEC fallback path.
 
 **Commit:** `Add validation company list for Phase 1 sample`
 
@@ -578,8 +578,8 @@ ai-collect status
 
 **Done when:**
 
-- [ ] `validate` shows 0 violations.
-- [ ] Status shows expected mix of success / api_key_missing / no_results (document which keys you have).
+- [x] `validate` shows 0 violations.
+- [x] Status shows expected mix of success / api_key_missing / no_results (document which keys you have).
 
 **Fix loop:** If violations > 0, go back to Block C — do not proceed.
 
@@ -608,9 +608,9 @@ ai-collect show-platforms
 
 **Done when:**
 
-- [ ] 25–50 companies have evidence in DB.
-- [ ] `validate` → all violation counts 0.
-- [ ] Export bundle saved.
+- [x] 25–50 companies have evidence in DB.
+- [x] `validate` → all violation counts 0.
+- [x] Export bundle saved.
 
 **Commit:** `Phase 1 validation corpus collected for N companies` (do not commit `data/` — exports stay local)
 
@@ -634,7 +634,7 @@ ai-collect show-platforms
 
 **Done when:**
 
-- [ ] Template filled for at least 5 companies.
+- [x] Template filled for at least 5 companies.
 
 **Commit:** `Add Phase 1 QA spot-check notes`
 
@@ -646,13 +646,13 @@ ai-collect show-platforms
 
 **Checklist:**
 
-- [ ] `config/platforms.yaml` is SSOT; `show-platforms` works
-- [ ] `data-sources.md` synced
-- [ ] `pytest` passes
-- [ ] `ai-collect validate` = 0 violations on validation set
-- [ ] Export bundle ready for Team 2
-- [ ] `implementation-plan.md` Phase 1 marked complete
-- [ ] `change-log.md` updated
+- [x] `config/platforms.yaml` is SSOT; `show-platforms` works
+- [x] `data-sources.md` synced
+- [x] `pytest` passes
+- [x] `ai-collect validate` = 0 violations on validation set
+- [x] Export bundle ready for Team 2
+- [x] `implementation-plan.md` Phase 1 marked complete
+- [x] `change-log.md` updated
 
 **Verify:**
 
@@ -717,13 +717,13 @@ Block C — Collector stabilization
   [x] 3.5  reprocess smoke test
 
 Block D — Validation sample
-  [ ] 4.1  validation company list
-  [ ] 4.2  pilot 3 companies
-  [ ] 4.3  full 25–50 run
-  [ ] 4.4  QA spot-check
-  [ ] 4.5  completion review
+  [x] 4.1  validation company list
+  [x] 4.2  pilot 3 companies
+  [x] 4.3  full 25–50 run
+  [x] 4.4  QA spot-check
+  [x] 4.5  completion review
 ```
 
 ---
 
-*Last updated: 2026-06-16 — Block C collector stabilization complete*
+*Last updated: 2026-06-16 — Phase 1 complete (Blocks A–D)*

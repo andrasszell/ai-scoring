@@ -1,0 +1,159 @@
+# Phase 1 validation sample (Block D) — 35 tickers across sector / cap / entity-resolution spread.
+# Used by: ai-collect collect --validation-set
+# Change workflow: edit → load-companies --validation-set → change-log entry.
+
+version: "1"
+description: >
+  Validation corpus for Phase 1: prove the pipeline at modest scale before
+  scaling to the full S&P 500. All tickers resolve via S&P 500 load or SEC fallback.
+
+companies:
+  # --- DEFAULT_TICKERS (10 mega-cap) ---
+  - ticker: AAPL
+    group: mega_cap_default
+    sector: Technology
+    note: Magnificent Seven / default universe
+  - ticker: MSFT
+    group: mega_cap_default
+    sector: Technology
+    note: Magnificent Seven / default universe
+  - ticker: NVDA
+    group: mega_cap_default
+    sector: Technology
+    note: Magnificent Seven / default universe
+  - ticker: AMZN
+    group: mega_cap_default
+    sector: Consumer Discretionary
+    note: Magnificent Seven / default universe
+  - ticker: GOOGL
+    group: mega_cap_default
+    sector: Communication Services
+    note: Magnificent Seven / default universe; brand alias Google
+  - ticker: META
+    group: mega_cap_default
+    sector: Communication Services
+    note: Magnificent Seven / default universe
+  - ticker: AVGO
+    group: mega_cap_default
+    sector: Technology
+    note: Semiconductors / default universe
+  - ticker: TSLA
+    group: mega_cap_default
+    sector: Consumer Discretionary
+    note: EV / default universe
+  - ticker: BRK-B
+    group: mega_cap_default
+    sector: Financials
+    note: Conglomerate / default universe
+  - ticker: JPM
+    group: mega_cap_default
+    sector: Financials
+    note: Money-center bank / default universe
+
+  # --- Large-cap sector spread (10) ---
+  - ticker: UNH
+    group: large_cap_diversified
+    sector: Health Care
+    note: Managed care
+  - ticker: JNJ
+    group: large_cap_diversified
+    sector: Health Care
+    note: Pharma / med devices
+  - ticker: LLY
+    group: large_cap_diversified
+    sector: Health Care
+    note: Pharma; AI drug-discovery signal
+  - ticker: BAC
+    group: large_cap_diversified
+    sector: Financials
+    note: Regional / consumer bank
+  - ticker: GS
+    group: large_cap_diversified
+    sector: Financials
+    note: Investment bank
+  - ticker: XOM
+    group: large_cap_diversified
+    sector: Energy
+    note: Integrated oil
+  - ticker: CVX
+    group: large_cap_diversified
+    sector: Energy
+    note: Integrated oil
+  - ticker: WMT
+    group: large_cap_diversified
+    sector: Consumer Staples
+    note: Retail
+  - ticker: PG
+    group: large_cap_diversified
+    sector: Consumer Staples
+    note: Household products
+  - ticker: KO
+    group: large_cap_diversified
+    sector: Consumer Staples
+    note: Beverages
+
+  # --- Mid-cap with known AI activity (5) ---
+  - ticker: PLTR
+    group: mid_cap_ai
+    sector: Technology
+    note: AI / data analytics platform
+  - ticker: CRWD
+    group: mid_cap_ai
+    sector: Technology
+    note: Security / ML threat detection
+  - ticker: SNOW
+    group: mid_cap_ai
+    sector: Technology
+    note: Data cloud / ML workloads
+  - ticker: DDOG
+    group: mid_cap_ai
+    sector: Technology
+    note: Observability / AIOps
+  - ticker: ANET
+    group: mid_cap_ai
+    sector: Technology
+    note: Networking / AI cluster infra
+
+  # --- SEC fallback / non-index names (5) ---
+  - ticker: ELAN
+    group: sec_fallback
+    sector: Health Care
+    note: Elanco — animal health; tests SEC-only entity resolution
+  - ticker: PATH
+    group: sec_fallback
+    sector: Technology
+    note: UiPath — RPA / automation
+  - ticker: AI
+    group: sec_fallback
+    sector: Technology
+    note: C3.ai — enterprise AI platform
+  - ticker: SOUN
+    group: sec_fallback
+    sector: Technology
+    note: SoundHound — voice / conversational AI
+  - ticker: UPST
+    group: sec_fallback
+    sector: Financials
+    note: Upstart — ML lending models
+
+  # --- Additional large-cap tech (5) ---
+  - ticker: ORCL
+    group: large_cap_tech
+    sector: Technology
+    note: Enterprise software / cloud AI
+  - ticker: IBM
+    group: large_cap_tech
+    sector: Technology
+    note: Enterprise AI / watsonx
+  - ticker: INTC
+    group: large_cap_tech
+    sector: Technology
+    note: Semiconductors / AI accelerators
+  - ticker: CSCO
+    group: large_cap_tech
+    sector: Technology
+    note: Networking / security AI
+  - ticker: AMD
+    group: large_cap_tech
+    sector: Technology
+    note: Semiconductors / AI GPUs

@@ -2,6 +2,26 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Phase 1 complete (Block D: validation sample)
+
+- **`config/validation_companies.yaml`** — 35-ticker Phase 1 validation corpus (mega-cap,
+  sector spread, mid-cap AI, SEC fallback names).
+- **`universe/validation.py`** — load validation set; `ensure_validation_companies()` with
+  SEC filer fallback for non-S&P tickers (e.g. ELAN).
+- **CLI:** `ai-collect collect --validation-set` and `load-companies --validation-set`.
+- **`config/company_domains.yaml`** — domains for all validation tickers.
+- **QA docs:** `docs/qa/phase-1-pilot-notes.md`, `phase-1-validation-run.md`,
+  `phase-1-spot-check.md`.
+- **Validation run:** 35 companies, 991 evidence rows, 0 `ai-collect validate` violations;
+  export at `data/exports/phase1_20260616/` (local).
+- Test suite: 121 tests.
+
+## 2026-06-16 — Phase 1 Block C: source_date stabilization
+
+- **`dates.py`** — shared source-date helpers with `date_provenance` metadata.
+- SerpAPI, patents, research, earnings collectors populate `source_date`; earnings hardened.
+- Test suite: 114 tests.
+
 ## 2026-06-16 — Phase 1 Block B: entity metadata (Steps 2.1–2.3)
 
 - **`config/company_domains.yaml`** — seeds `companies.website_domain` for default tickers.
