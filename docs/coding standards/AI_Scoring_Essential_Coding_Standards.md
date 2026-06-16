@@ -389,6 +389,16 @@ Keep only these essential docs current:
 /docs/setup.md                  # how to run the project
 ```
 
+**Supplementary** (phase guides and strategy — keep in sync when phases change):
+
+```text
+/docs/README.md                      # doc map (entry point)
+/docs/phase-1-development-plan.md    # Phase 1 checklist (complete)
+/docs/phase-2-implementation.md    # Phase 2 reference (complete)
+/docs/phase-3-development-plan.md    # Phase 3 checklist (planned)
+/docs/data-collection-initial-plan.md  # Team 1 strategy; §6A registry
+```
+
 When scoring logic changes, update `scoring-methodology.md` in the same change.
 
 When data source rules change, update `data-sources.md` in the same change.

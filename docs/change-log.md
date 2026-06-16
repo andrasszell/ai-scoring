@@ -2,9 +2,60 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Documentation consolidation
+
+- **Merged** `on-demand-company-scoring.md` → [`phase-2-implementation.md`](phase-2-implementation.md) § 2.0 (deleted redundant file).
+- **Merged** `post-phase-1-collection-outcomes-plan.md` → [`data-sources.md`](data-sources.md) § Collection outcome semantics (deleted redundant file).
+- **Slimmed** [`implementation-plan.md`](implementation-plan.md) to status tracker only (no duplicate task tables).
+- **Reorganized** [`project-control.md`](project-control.md) as documentation index.
+- **Moved** vision notes to [`reference/`](reference/); QA index at [`qa/README.md`](qa/README.md).
+
+## 2026-06-16 — Phase 2 and Phase 3 documentation
+
+- **`phase-2-implementation.md`** — authoritative Phase 2 reference (2.0–2.3 complete).
+- **`phase-3-development-plan.md`** — step-by-step Phase 3 checklist (3A scale, 3B premium).
+- **`implementation-plan.md`** — links to phase guides; Phase 2/3 summary sections.
+- **`project-control.md`**, **`phase-2-implementation.md`**, **`data-sources.md`**, README — cross-links.
+
+## 2026-06-16 — Phase 2.3: product documentation collector
+
+- **`ProductDocsCollector`** — SerpAPI discovers on-domain doc pages; fetches HTML,
+  stores text for `reprocess`; AI paragraph extraction (Block F outcomes).
+- Requires `website_domain` (from `company_domains.yaml`).
+- **`reprocess --source product_docs`** wired via `DOCUMENT_SOURCES`.
+- **Scoring** — `ai_adoption_score_v0_5` adds `product_docs` pillar (weight 10).
+  **188 tests.**
+
+## 2026-06-16 — Phase 2.2: press releases collector
+
+- **`PressReleasesCollector`** — SerpAPI Google web search for AI-related press
+  releases; `site:{website_domain}` when known; Block F outcome reasons.
+- **`platforms.yaml`** — `press_releases` enabled (`phase: 2`, `SERPAPI_API_KEY`).
+- **Scoring** — `ai_adoption_score_v0_4` adds `press_releases` pillar (weight 8;
+  `web_products` 15→10, `hiring_jobs` 15→12). **180 tests.**
+
+## 2026-06-16 — Phase 2.1: GitHub repositories collector
+
+- **`GitHubReposCollector`** — searches configured org slugs via GitHub Search API;
+  AI keyword filter on name/description/topics; Block F outcome reasons.
+- **`config/company_github_orgs.yaml`** — ticker → GitHub org slug list (entity metadata).
+- **`platforms.yaml`** — `github_repos` enabled (`phase: 2`).
+- **Registry gate** — all `enabled: true` platforms run by default (not only phase 1).
+- **Scoring** — `ai_adoption_score_v0_3` adds `github_repos` pillar (weight 10;
+  `web_products` reduced 25→15). **173 tests.**
+
+## 2026-06-16 — Phase 2.0: on-demand company scoring (implemented)
+
+- **`universe/lookup.py`** — shared `lookup_company`, `ensure_single_company`, SEC ticker upsert.
+- **`ai-collect resolve`** — identity lookup without collection.
+- **`collect --ticker`** — auto-upsert missing tickers from SEC filers.
+- **`ai-score score --company`**, **`ai-score run --company`** — resolve + score; `run` orchestrates collection.
+- **`inference/company.py`** — scoring-side resolution helpers (collection/scoring boundary preserved).
+- Tests: 164 total (`test_universe_lookup`, `test_cli_phase2`, `test_inference_cli_phase2`).
+
 ## 2026-06-16 — On-demand company scoring plan (Phase 2.0)
 
-- **New plan:** [`on-demand-company-scoring.md`](on-demand-company-scoring.md) — score
+- **Plan (now in [`phase-2-implementation.md`](phase-2-implementation.md) § 2.0):** score
   any SEC-listed company by name/ticker; S&P 500 remains bulk default.
 - **Phase 1 today:** `ai-collect analyze "<name>"` + `ai-score score --ticker`.
 - **Phase 2.0 planned:** `ai-score --company`, one-shot `run`, `collect --ticker` SEC upsert.
@@ -39,13 +90,12 @@ Important changes and decisions (Coding Standards §13). Newest first.
 
 - **Problem:** `no_results` conflates “source empty” vs “filtered to zero” vs failures;
   scoring must not treat all as “company has no AI.”
-- **New plan:** [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)
-  — controlled `outcome_reason` codes (`source_empty`, `filtered_to_zero`), hit counters,
+- **Plan (now in [`data-sources.md`](data-sources.md#collection-outcome-semantics)):** controlled `outcome_reason` codes (`source_empty`, `filtered_to_zero`), hit counters,
   collector updates (F.2–F.3), CLI (F.4), inference guardrails (F.5).
 - **Docs synced:** `data-collection-initial-plan.md` §12, `data-sources.md`,
   `scoring-methodology.md`, `implementation-plan.md`, `phase-1-development-plan.md` Block F,
   `project-control.md`.
-- **Status:** F.1 documentation complete; implementation not started.
+- **Status (historical):** plan only at this date; **implemented** in Block F entry above.
 
 ## 2026-06-16 — Block D audit fixes
 

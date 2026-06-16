@@ -4,7 +4,7 @@
 
 > **Universe note:** S&P 500 is the **primary bulk universe**, but you can score
 > **any SEC-listed company** on demand — see
-> [`on-demand-company-scoring.md`](on-demand-company-scoring.md).
+> **On-demand scoring** (any company by name): [`phase-2-implementation.md` § 2.0](phase-2-implementation.md#block-20--on-demand-company-scoring).
 
 > **Status: MVP / proof of concept.** The pipeline end-to-end works and produces
 > scores today, but the scoring is a deliberately simple first version. Please
@@ -101,7 +101,7 @@ as a count of zero (see **How scoring treats collection outcomes** below).
 | `source_unavailable`, `rate_limited`, `parse_failed` | **No** — exclude pillar | unknown |
 
 When pillars are excluded, remaining measured pillars **share the full 100 points**
-proportionally (formula `ai_adoption_score_v0_2`). Excluded pillars appear in the
+proportionally (formula `ai_adoption_score_v0_5`). Excluded pillars appear in the
 score explanation with `"excluded": true` and contribute 0 points.
 
 If `documents_count > 0` or `source_hits > 0` with `reason:filtered_to_zero`, the
@@ -120,7 +120,7 @@ Everything lands in a local database. The key tables are:
   found nothing, or failed (and why). *Absence of evidence is not evidence of absence.*
   Post Phase 1, each row should carry an **`outcome_reason`** when status is
   `success` or `no_results` (see
-  [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)):
+  [`data-sources.md` § Collection outcome semantics](data-sources.md#collection-outcome-semantics)):
   - `reason:source_empty` — origin had nothing (weak “no signal” in that channel)
   - `reason:filtered_to_zero` — material fetched but zero evidence rows ( **not**
     proof of no AI activity)
@@ -142,12 +142,12 @@ We convert the raw counts into the 0–100 score (details below).
 
 ## 4. How the score is calculated — in detail
 
-The score combines the six pillars using **weights** (how much each pillar matters)
+The score combines the nine pillars using **weights** (how much each pillar matters)
 and **caps** (the count at which a pillar is considered "maxed out").
 
 ### Step-by-step
 
-**Formula version:** `ai_adoption_score_v0_2` (Block F — outcome-aware).
+**Formula version:** `ai_adoption_score_v0_5` (Phase 2.3 — adds product documentation pillar).
 
 1. Read the latest `collector_status` per pillar. Pillars with `api_key_missing`,
    `skipped`, `source_unavailable`, `rate_limited`, or `parse_failed` are
@@ -171,28 +171,35 @@ Then **sum all measured** pillar contributions → the AI Depth Score (max 100).
 |---|---:|---:|
 | Annual report (10-K) | 25 | 20 paragraphs |
 | Earnings calls | 20 | 12 paragraphs |
-| Products / services | 25 | 8 results |
-| Hiring intensity | 15 | 8 results |
+| Products / services | 5 | 8 results |
+| Hiring intensity | 10 | 8 results |
 | Patents | 10 | 10 patents |
 | Research papers | 5 | 5 papers |
+| GitHub repositories | 8 | 8 repos |
+| Press releases | 7 | 6 releases |
+| Product documentation | 10 | 6 paragraphs |
 | **Total** | **100** | |
 
-### Worked example — Microsoft (illustrative, formula v0_2)
+### Worked example — Microsoft (illustrative, formula v0_5)
 
-Assume four **measured** pillars (SEC, products, hiring, research) and two
-**excluded** pillars (earnings — `api_key_missing`; patents — `api_key_missing`).
-Nominal weights 25 + 25 + 15 + 5 = **70** → each pillar's effective weight is
-scaled by `100 / 70`.
+Assume four **measured** pillars (SEC, products, hiring, research) and five
+**excluded** pillars (earnings — `api_key_missing`; patents — `api_key_missing`;
+GitHub — no orgs configured; press — `api_key_missing`; product docs — no domain).
+Nominal weights 25 + 5 + 10 + 5 = **45** → each measured pillar's effective weight is
+scaled by `100 / 45`.
 
 | Pillar | Status | Raw count | Cap | Ratio | Nom. weight | Effective weight | Points |
 |---|---|---:|---:|---:|---:|---:|---:|
-| Annual report (10-K) | measured | 15 | 20 | 0.75 | 25 | 35.71 | **26.79** |
-| Products / services | measured | 8 | 8 | 1.00 | 25 | 35.71 | **35.71** |
-| Hiring intensity | measured | 10 | 8 | 1.00 | 15 | 21.43 | **21.43** |
-| Research papers | measured | 10 | 5 | 1.00 | 5 | 7.14 | **7.14** |
+| Annual report (10-K) | measured | 15 | 20 | 0.75 | 25 | 55.56 | **41.67** |
+| Products / services | measured | 8 | 8 | 1.00 | 5 | 11.11 | **11.11** |
+| Hiring intensity | measured | 10 | 8 | 1.00 | 10 | 22.22 | **22.22** |
+| Research papers | measured | 10 | 5 | 1.00 | 5 | 11.11 | **11.11** |
 | Earnings calls | excluded | — | — | — | 20 | — | 0.0 |
 | Patents | excluded | — | — | — | 10 | — | 0.0 |
-| **AI Depth Score** | | | | | | | **91.07** |
+| GitHub repositories | excluded | — | — | — | 8 | — | 0.0 |
+| Press releases | excluded | — | — | — | 7 | — | 0.0 |
+| Product documentation | excluded | — | — | — | 10 | — | 0.0 |
+| **AI Depth Score** | | | | | | | **86.11** |
 
 Excluded pillars contribute **0 points** and do **not** shrink the denominator —
 measured pillars share the full 100. `input_evidence_ids` on the score row lists
@@ -241,8 +248,8 @@ To set expectations clearly:
 
 | Area | Limitation | Impact |
 |---|---|---|
-| **Coverage** | 10-K, products, and hiring are active; earnings, patents, and (reliable) research still need API keys not yet provisioned | Those pillars currently read 0, understating scores |
-| **Outcome semantics** | Bare `no_results` does not distinguish source empty vs filtered-to-zero (Block F planned) | Misleading zeros until `reason:` codes ship |
+| **Coverage** | Nine collectors enabled; optional pillars (earnings, patents, SerpAPI trio, GitHub) need API keys and/or entity metadata (`website_domain`, `company_github_orgs.yaml`) | Missing keys or config → pillar excluded (not scored as zero activity) |
+| **Outcome semantics** | Block F complete — `reason:source_empty` / `reason:filtered_to_zero` on `no_results` | `validate` gates on `missing_outcome_reason` |
 | **Brand vs legal name** | Web/job sources index employers by brand, not legal name (e.g. Alphabet→Google); handled via a small alias map | Some companies miss a pillar (e.g. Google's own postings don't appear in Google Jobs) |
 | **Hiring signal** | Uses Google Jobs postings (incl. LinkedIn) but counts are page-limited and not deduplicated | Reasonable proxy; not a true headcount/role-share measure |
 | **Patents/research matching** | Name-based, no subsidiary/legal-entity mapping | Both false positives and misses |
@@ -257,8 +264,8 @@ To set expectations clearly:
 
 In rough priority order:
 
-1. **Provision data access** — add the API keys so all six pillars populate
-   (biggest immediate improvement to coverage).
+1. **Provision data access + entity metadata** — API keys for optional pillars;
+   seed `website_domain` and GitHub org slugs for companies you score.
 2. **Move from counting to understanding** — use an LLM to classify the retrieved
    passages (e.g. "core product" vs "risk disclosure" vs "buzzword"), so we score
    substance, not volume.
@@ -278,21 +285,20 @@ Use it as a directional, demo-stage indicator and always check the underlying
 evidence. Do not use it as a standalone signal yet.
 
 **Why do some big tech names score lower than expected?**
-Most likely because pillars beyond the 10-K aren't collected yet (no API keys), or
-because their AI work shows up in products/patents we haven't enabled — not because
-they don't use AI.
+Most likely because optional pillars are excluded (`api_key_missing`), entity
+metadata is missing (GitHub orgs, `website_domain` for product docs), or AI
+mentions were filtered out (`reason:filtered_to_zero`) — not because they don't use AI.
 
 **Can we add companies outside the default list?**
 Yes. Three paths:
 
 1. **S&P 500 bulk** — `ai-collect load-companies` then `collect --all` or `--ticker`.
-2. **Ad-hoc by name (today)** — `ai-collect analyze "Company Name"` resolves the
-   ticker (SEC fallback for non-index filers), collects evidence, then
+2. **Ad-hoc by name** — `ai-score score --company "Name"` or `ai-score run --company "Name"`
+   (collects via `run` when evidence is missing). Also: `ai-collect analyze` then
    `ai-score score --ticker SYMBOL`.
-3. **Phase 2.0 (planned)** — `ai-score score --company "Name"` and optional
-   `ai-score run --company "Name"` (collect + score in one step).
+3. **Phase 3+** — scale, premium vendors, production handoff.
 
-See [`on-demand-company-scoring.md`](on-demand-company-scoring.md) for limits
+See [`phase-2-implementation.md` § 2.0](phase-2-implementation.md#block-20--on-demand-company-scoring) for limits
 (private / non-US companies may have incomplete SEC pillar coverage).
 
 **How auditable is it?**

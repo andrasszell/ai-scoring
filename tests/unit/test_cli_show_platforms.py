@@ -63,7 +63,7 @@ def test_show_platforms_all_lists_phase2_and_phase3_stubs(capsys):
     out = capsys.readouterr().out
     for platform_id in ("github_repos", "press_releases", "product_documentation", "lightcast", "alphasense", "revelio"):
         assert platform_id in out
-    assert out.count(" no ") >= 6
+    assert out.count(" no ") >= 3
 
 
 def test_show_platforms_phase_filter(capsys, monkeypatch):

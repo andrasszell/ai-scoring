@@ -55,6 +55,7 @@ FMP_API_KEY="..."              # earnings-call transcripts (usually a paid plan)
 SERPAPI_API_KEY="..."          # product/service + hiring (Google Jobs incl. LinkedIn)
 SEMANTIC_SCHOLAR_API_KEY="..." # research papers; optional, raises rate limits
 PATENTSVIEW_API_KEY="..."      # AI patent activity (PatentsView Search API)
+GITHUB_TOKEN="..."             # GitHub repos; optional, raises rate limits
 ```
 
 ### Which source needs which key
@@ -76,7 +77,8 @@ ai-collect load-companies --validation-set  # also ensure Phase 1 validation tic
 ai-collect validate-company MSFT            # inspect identity, aliases, collection status
 ai-collect collect --ticker MSFT NVDA       # specific companies (all sources)
 ai-collect collect --validation-set         # Phase 1 sample (35 tickers from config)
-ai-collect collect --source sec research    # limit to specific sources
+ai-collect collect --source sec research github press product_docs    # limit sources
+ai-collect reprocess --source product_docs --ticker MSFT              # offline re-extract
 ai-collect collect --all                    # every loaded company
 ai-collect status                           # latest status per company/source
 ai-collect show-platforms                   # registry + API key status (no DB)
@@ -98,19 +100,21 @@ re-hitting source APIs.
 ai-collect analyze Microsoft
 ai-collect analyze "Elanco Animal Health"   # falls back to the full SEC filer list
 ai-collect analyze NVDA --source sec
+ai-collect resolve "Elanco Animal Health"   # identity only, no collection
 ```
 
 `analyze` resolves the name (exact → prefix → substring), falls back to all SEC
 filers for non-index companies, and lists candidates when a name is ambiguous.
 
-**Score that company** (inference layer — separate step today):
+**Score that company:**
 
 ```bash
-ai-score score --ticker MSFT --persist
+ai-score score --company "Microsoft" --persist   # resolve + score existing evidence
+ai-score run --company "Microsoft" --persist     # collect if needed, then score
+ai-collect collect --ticker ELAN MSFT            # unknown tickers upserted from SEC
 ```
 
-Full ad-hoc workflow and Phase 2.0 plans (`--company`, one-shot `run`):
-[`docs/on-demand-company-scoring.md`](docs/on-demand-company-scoring.md).
+Full workflow: [`docs/phase-2-implementation.md`](docs/phase-2-implementation.md) (§ Block 2.0).
 
 ## Export for the inference team
 
@@ -129,21 +133,23 @@ Scoring is a **separate** tool that only reads the evidence corpus:
 
 ```bash
 ai-score score --ticker MSFT NVDA            # prints per-driver explanation
-ai-score score --persist                     # also writes versioned rows to scores table
+ai-score score --company "Microsoft"         # resolve by name, then score
+ai-score run --company "Elanco Animal Health" --persist
 ai-score export-scores --output data/exports/ai_depth_scores.csv
 ```
 
-Companies need evidence first (`ai-collect collect` or `analyze`). For names
-outside the S&P 500 load, use `ai-collect analyze "Company Name"` then
-`ai-score score --ticker SYMBOL`. Planned: `ai-score score --company "Name"`.
-See [`docs/on-demand-company-scoring.md`](docs/on-demand-company-scoring.md).
+`run` collects evidence when none exists (or pass `--collect` to refresh). Companies
+outside the S&P 500 load are resolved via SEC filers. See
+[`docs/phase-2-implementation.md`](docs/phase-2-implementation.md).
 
 The current scorer is the MVP heuristic carried over from the prototype: it counts
 evidence items per collector, caps each signal, and produces a weighted 0–100
-score. It is **versioned** (`ai_adoption_score_v0_1`), returns a per-driver
+score. It is **versioned** (`ai_adoption_score_v0_5`, nine pillars), returns a per-driver
 **explanation**, records the **input evidence ids**, and persists append-only rows
 to the `scores` table. It is expected to be replaced by the mathematical inference
-model (which will introduce a `signals` layer — see `docs/implementation-plan.md`).
+model (which will introduce a `signals` layer — see [`docs/implementation-plan.md`](docs/implementation-plan.md)).
+
+**Docs:** [`docs/README.md`](docs/README.md) · [`docs/project-control.md`](docs/project-control.md)
 
 ## Database schema
 
@@ -197,6 +203,8 @@ CI runs the tests on Python 3.10–3.12 via GitHub Actions.
 - **Phase 1 (done):** platform registry, entity metadata, collector stabilization,
   35-company validation sample (`collect --validation-set`). See
   [`docs/phase-1-development-plan.md`](docs/phase-1-development-plan.md).
-- **Phase 2:** high-value sources (technical blogs, docs, GitHub, press, case studies).
-- **Phase 3:** scale to the full S&P 500 with refresh + freshness monitoring.
+- **Phase 2 (done):** on-demand scoring, GitHub, press releases, product documentation —
+  [`docs/phase-2-implementation.md`](docs/phase-2-implementation.md).
+- **Phase 3 (next):** full S&P 500 scale, API-cost tracking, incremental refresh —
+  [`docs/phase-3-development-plan.md`](docs/phase-3-development-plan.md).
 - **Phase 4:** versioned evidence snapshots + field-definition docs for the inference team.

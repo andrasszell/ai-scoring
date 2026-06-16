@@ -61,6 +61,7 @@ class Settings:
     serpapi_api_key: str = os.getenv("SERPAPI_API_KEY", "")
     semantic_scholar_api_key: str = os.getenv("SEMANTIC_SCHOLAR_API_KEY", "")
     patentsview_api_key: str = os.getenv("PATENTSVIEW_API_KEY", "")
+    github_token: str = os.getenv("GITHUB_TOKEN", "")
     request_timeout: int = int(os.getenv("REQUEST_TIMEOUT", "30"))
     max_candidate_paragraphs: int = int(os.getenv("MAX_CANDIDATE_PARAGRAPHS", "40"))
     log_level: str = os.getenv("AI_DEPTH_LOG_LEVEL", "INFO")

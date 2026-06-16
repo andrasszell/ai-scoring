@@ -22,16 +22,19 @@ from evidence_collection.status import CollectionStatus
 # evidence count acts as one signal, and `input_evidence_ids` records the evidence
 # rows that fed the score (a stand-in for `input_signal_ids`).
 
-FORMULA_VERSION = "ai_adoption_score_v0_2"
+FORMULA_VERSION = "ai_adoption_score_v0_5"
 SCORE_TYPE = "ai_adoption_depth"
 
 WEIGHTS = {
     "sec_filings": 25,
     "earnings_calls": 20,
-    "web_products": 25,
-    "hiring_jobs": 15,
+    "web_products": 5,
+    "hiring_jobs": 10,
     "patents": 10,
     "research": 5,
+    "github_repos": 8,
+    "press_releases": 7,
+    "product_docs": 10,
 }
 
 CAPS = {
@@ -41,6 +44,9 @@ CAPS = {
     "hiring_jobs": 8,
     "patents": 10,
     "research": 5,
+    "github_repos": 8,
+    "press_releases": 6,
+    "product_docs": 6,
 }
 
 EXCLUDE_PILLAR_STATUSES = frozenset(

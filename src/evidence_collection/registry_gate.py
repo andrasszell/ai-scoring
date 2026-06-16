@@ -23,9 +23,10 @@ def get_platform_registry() -> Registry:
     return _REGISTRY
 
 
-def enabled_cli_sources(*, phase: int = 1) -> frozenset[str]:
+def enabled_cli_sources() -> frozenset[str]:
+    """CLI source keys for all enabled platforms (any phase)."""
     registry = get_platform_registry()
-    return frozenset(p.cli_source for p in registry.platforms_enabled(phase=phase))
+    return frozenset(p.cli_source for p in registry.platforms if p.enabled)
 
 
 def platform_for_collector(collector) -> Platform | None:
@@ -63,7 +64,7 @@ def collector_gate(collector) -> CollectorResult | None:
     platform = platform_for_collector(collector)
     if platform is None:
         return None
-    if not platform.enabled or platform.phase != 1:
+    if not platform.enabled:
         return CollectorResult(
             CollectionStatus.SKIPPED,
             message=f"platform_disabled:{platform.id}",

@@ -35,9 +35,9 @@ The registry is the approval record; collectors implement fetch logic.
 | `sec_company_tickers` | SEC company tickers | U.S. Securities and Exchange Commission | `SEC_USER_AGENT` (required) | 1 | yes | `load-companies` |
 
 CLI: `ai-collect load-companies` merges Wikipedia sector/industry with SEC CIKs.
-The SEC filer list is also used as the fallback universe for `ai-collect analyze`
-(on-demand companies outside the S&P 500 load). See
-[`on-demand-company-scoring.md`](on-demand-company-scoring.md).
+The SEC filer list is also used as the fallback universe for on-demand company
+resolution (`analyze`, `score --company`, `run --company`). See
+[`phase-2-implementation.md` § Block 2.0](phase-2-implementation.md#block-20--on-demand-company-scoring).
 
 ### Evidence collectors (Phase 1 — enabled)
 
@@ -50,24 +50,59 @@ The SEC filer list is also used as the fallback universe for `ai-collect analyze
 | `patentsview` | `patents` | `patents` | `patent` | PatentsView Search API | `PATENTSVIEW_API_KEY` (optional) | regulatory_filing | medium | 0.55 | free |
 | `semantic_scholar` | `research` | `research` | `research_paper` | Semantic Scholar Graph API | `SEMANTIC_SCHOLAR_API_KEY` (optional) | third_party_database | medium | 0.45 | free |
 
-Run a subset: `ai-collect collect --source sec hiring --ticker MSFT`
+Run a subset: `ai-collect collect --source sec github press product_docs --ticker MSFT`
 
-Inspect registry + key status: `ai-collect show-platforms` (phase 1 enabled) or
+Inspect registry + key status: `ai-collect show-platforms` (enabled collectors) or
 `ai-collect show-platforms --all` (all phases, including disabled stubs).
 
 Collectors declare matching `platform_id` in code (see `collectors/base.py`).
 
 ---
 
-## Phase 2 — planned (registry stubs, disabled)
+## Phase 2 — GitHub (enabled)
 
-| ID | Collector | `source_type` | Display name | Enabled |
-|---|---|---|---|---|
-| `github_repos` | `github_repos` | `github_repository` | GitHub public repositories | no |
-| `press_releases` | `press_releases` | `press_release` | Company press releases | no |
-| `product_documentation` | `product_docs` | `product_documentation` | Product and developer documentation | no |
+| ID | Collector | CLI | `source_type` | Display name | Env | Enabled |
+|---|---|---|---|---|---|---|
+| `github_repos` | `github_repos` | `github` | `github_repository` | GitHub public repositories | `GITHUB_TOKEN` (optional) | yes |
 
-Collectors not implemented — YAML-only until adapters exist.
+Org slugs per ticker: [`config/company_github_orgs.yaml`](../config/company_github_orgs.yaml).
+Without a configured org list the collector reports `reason:source_empty` (no guessing).
+
+```bash
+ai-collect collect --source github --ticker MSFT NVDA
+```
+
+## Phase 2 — Press releases (enabled)
+
+| ID | Collector | CLI | `source_type` | Display name | Env | Enabled |
+|---|---|---|---|---|---|---|
+| `press_releases` | `press_releases` | `press` | `press_release` | Company press releases | `SERPAPI_API_KEY` (optional) | yes |
+
+Uses the same SerpAPI key as products/hiring. When `website_domain` is set the
+query is `site:{domain}` for first-party press pages.
+
+```bash
+ai-collect collect --source press --ticker MSFT
+```
+
+## Phase 2 — Product documentation (enabled)
+
+| ID | Collector | CLI | `source_type` | Display name | Env | Enabled |
+|---|---|---|---|---|---|---|
+| `product_documentation` | `product_docs` | `product_docs` | `product_documentation` | Product and developer documentation | `SERPAPI_API_KEY` (optional) | yes |
+
+Discovers first-party documentation via SerpAPI (`site:{website_domain}`), fetches
+pages, stores text for offline reprocess. Requires `website_domain` on the company.
+
+```bash
+ai-collect collect --source product_docs --ticker MSFT
+ai-collect reprocess --source product_docs --ticker MSFT
+```
+
+## Phase 2 — planned
+
+All Phase 2 registry collectors are now implemented. Remaining work is validation
+at scale and optional vendor swaps — see [`phase-3-development-plan.md`](phase-3-development-plan.md).
 
 ---
 
@@ -108,6 +143,9 @@ Applied automatically on every evidence row (`source_category`,
 | `job_posting` | job_posting | medium | 0.50 |
 | `patent` | regulatory_filing | medium | 0.55 |
 | `research_paper` | third_party_database | medium | 0.45 |
+| `github_repository` | third_party_database | medium | 0.50 |
+| `press_release` | press_release | medium | 0.45 |
+| `product_documentation` | product_documentation | high | 0.65 |
 
 ## Source-quality rules (Coding Standards §6)
 
@@ -124,6 +162,7 @@ A row whose URL is on the company's own `website_domain` is upgraded to
 `official_company / high` (`sources.refine_for_url`). Domains are seeded from
 [`config/company_domains.yaml`](../config/company_domains.yaml) on `load-companies`.
 Search aliases live in [`config/company_aliases.yaml`](../config/company_aliases.yaml).
+GitHub org slugs: [`config/company_github_orgs.yaml`](../config/company_github_orgs.yaml).
 Inspect one company: `ai-collect validate-company MSFT`.
 
 ## Phase 1 validation sample (Block D)
@@ -148,14 +187,27 @@ QA notes: [`docs/qa/`](qa/).
 
 ## Collection outcome semantics
 
-Every collector run must be explainable when evidence count is zero. See
-[`data-collection-initial-plan.md` §12](data-collection-initial-plan.md#12-collection-status-and-failure-handling)
-and the implementation plan
-[`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md).
+Every collector run must be explainable when evidence count is zero (Block F,
+complete). Strategic context: [`data-collection-initial-plan.md` §12](data-collection-initial-plan.md#12-collection-status-and-failure-handling).
 
-### Controlled reason codes (`collector_status.message`)
+### Status vocabulary (`collector_status.status`)
 
-When `status` is `success` or `no_results`, collectors should set:
+| `status` | Meaning |
+|---|---|
+| `success` | Run completed; see counters and `reason:` prefix in `message` |
+| `no_results` | Run completed with **zero evidence rows inserted** |
+| `api_key_missing` | Not attempted — required/optional key absent |
+| `api_limit_reached` | Not completed — quota exhausted |
+| `source_unavailable` | Attempted — transport/API/parse failure |
+| `rate_limited` | Attempted — throttled (e.g. HTTP 429) |
+| `parse_failed` | Response received but unusable |
+| `company_not_found` | Entity resolution failed (e.g. missing CIK) |
+| `ambiguous_company` | Multiple entity matches |
+| `skipped` | Registry gate (`enabled: false`) |
+
+### Outcome reason codes (`collector_status.message`)
+
+When `status` is `success` or `no_results`, collectors set a **`reason:` prefix**:
 
 ```text
 reason:source_empty       # API OK; origin returned nothing for this company/query
@@ -163,17 +215,30 @@ reason:filtered_to_zero   # Origin had material; zero evidence rows after filter
 reason:partial_success    # Some evidence; run hit caps/limits (optional)
 ```
 
+Stability rule: reason codes are a controlled vocabulary (`src/evidence_collection/outcomes.py`).
+Add new codes only via `data-sources.md` + `change-log.md`.
+
+### Counters on each run
+
+| Field | Meaning |
+|---|---|
+| `evidence_count` | Evidence rows inserted this run |
+| `documents_count` | Documents stored (SEC filing, earnings transcript, product doc, …) |
+| `api_calls` | HTTP calls made |
+| `source_hits` | Raw items returned by API before filtering |
+| `candidates_after_filter` | Items surviving collector-specific filter |
+
 ### How to read a status row
 
-| `status` | Typical `message` | `documents_count` | Interpretation |
-|---|---|---|---|
-| `success` | — or `reason:partial_success` | any | Evidence and/or documents collected |
-| `no_results` | `reason:source_empty` | 0 | Source had nothing to offer |
-| `no_results` | `reason:filtered_to_zero` | ≥1 **or** `source_hits` ≥1 | **Not** “company has no AI” |
-| `source_unavailable` / `rate_limited` | error detail | — | **Unknown** — re-run later |
-| `api_key_missing` / `skipped` | key/platform detail | — | **Not measured** |
+| `status` | `outcome_reason` | `documents_count` | `source_hits` | Safe inference |
+|---|---|---|---|---|
+| `success` | — | ≥0 | ≥0 | Evidence exists |
+| `no_results` | `source_empty` | 0 | 0 | Source empty for query |
+| `no_results` | `filtered_to_zero` | ≥1 **or** hits ≥1 | ≥1 | **Not** proof of no AI activity |
+| `source_unavailable` / `rate_limited` | — | — | — | **Unknown** — exclude pillar from score |
+| `api_key_missing` / `skipped` | — | — | — | **Not measured** — exclude pillar |
 
-All Phase 1 collectors emit `reason:…` on `no_results` rows (Block F complete).
+All collectors (Phase 1 + Phase 2) emit `reason:…` on `no_results` rows.
 `ai-collect validate` gates on `missing_outcome_reason` for latest status per source.
 
 Inspect: `ai-collect status`, `ai-collect validate-company TICKER`.

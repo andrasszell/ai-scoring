@@ -3,7 +3,9 @@ from evidence_collection.models import CollectorResult, collector_result
 from evidence_collection.outcomes import OutcomeReason
 from evidence_collection.status import CollectionStatus
 from inference.scoring import (
+    CAPS,
     FORMULA_VERSION,
+    WEIGHTS,
     compute_score_results,
     compute_scores,
     persist_scores,
@@ -39,6 +41,11 @@ def _record_status(conn, ticker, collector, source_type, result):
         result=result,
         duration_seconds=0.1,
     )
+
+
+def test_weights_and_caps_cover_all_pillars():
+    assert set(WEIGHTS) == set(CAPS)
+    assert sum(WEIGHTS.values()) == 100
 
 
 def test_only_companies_with_evidence_are_scored(conn):

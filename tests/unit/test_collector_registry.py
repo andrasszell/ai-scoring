@@ -19,9 +19,9 @@ def _clear_registry_cache():
     reset_registry_cache()
 
 
-def test_get_collectors_defaults_to_enabled_phase1():
+def test_get_collectors_defaults_to_enabled_platforms():
     collectors = get_collectors()
-    assert len(collectors) == 6
+    assert len(collectors) == 9
     assert {c.name for c in collectors} == {
         "sec_filings",
         "earnings_calls",
@@ -29,6 +29,9 @@ def test_get_collectors_defaults_to_enabled_phase1():
         "hiring_jobs",
         "patents",
         "research",
+        "github_repos",
+        "press_releases",
+        "product_docs",
     }
 
 

@@ -1,5 +1,9 @@
 # Phase 1 — Step-by-Step Development Plan
 
+> **Historical — Phase 1 complete (2026-06-16).** For current status see
+> [`implementation-plan.md`](implementation-plan.md). For Phase 2 see
+> [`phase-2-implementation.md`](phase-2-implementation.md).
+
 **Team 1 — Evidence Discovery Layer**
 
 Use this document as your **implementation checklist**. Complete one step at a
@@ -12,6 +16,8 @@ are met. Each step ends with a suggested git commit message.
 |---|---|
 | [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Strategy, §6A platform decisions, §6A.4 registry design |
 | [`implementation-plan.md`](implementation-plan.md) | High-level Phase 1 status (update checkboxes as you finish blocks) |
+| [`phase-2-implementation.md`](phase-2-implementation.md) | Phase 2 complete (reference) |
+| [`phase-3-development-plan.md`](phase-3-development-plan.md) | Phase 3 step-by-step (planned) |
 | [`data-sources.md`](data-sources.md) | Synced from registry after Step 1.8 |
 
 **Phase 1 deliverables:**
@@ -667,13 +673,11 @@ git status   # no .env, no data/*.sqlite committed
 
 ---
 
-## Block E — Phase 2 starters (do not start yet)
+## Block E — Phase 2 sources (complete)
 
-**Before new platforms:** complete **Phase 2.0 on-demand scoring** polish
-([`on-demand-company-scoring.md`](on-demand-company-scoring.md)) — `ai-score
---company`, optional one-shot `run`, `collect --ticker` SEC auto-upsert.
-
-These are Phase 2 platform additions — listed so you know where Phase 1 ends:
+**Before new platforms:** Phase 2 is **complete** — see
+[`phase-2-implementation.md`](phase-2-implementation.md). Next:
+[`phase-3-development-plan.md`](phase-3-development-plan.md).
 
 1. Add Phase 2 platform row to YAML (`enabled: false` → develop → `enabled: true`).
 2. Implement new collector adapter.
@@ -687,7 +691,7 @@ These are Phase 2 platform additions — listed so you know where Phase 1 ends:
 *Goal: distinguish “source had nothing” from “we fetched material but produced zero evidence,” and never treat failures as zero activity.*
 
 **Depends on:** Blocks A–D complete  
-**Full plan:** [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md)
+**Full reference:** [`data-sources.md` § Collection outcome semantics](data-sources.md#collection-outcome-semantics)
 
 | Step | Summary | Done |
 |------|---------|------|
@@ -714,7 +718,7 @@ emit reason codes from day one.
 | B | `ai-collect load-companies`, `ai-collect validate-company MSFT` |
 | C | `ai-collect collect`, `ai-collect validate`, `ai-collect reprocess` |
 | D | `ai-collect collect --ticker …`, `ai-collect export-all`, `ai-collect validate` |
-| F | `post-phase-1-collection-outcomes-plan.md`, `ai-collect status` |
+| F | `data-sources.md` § outcomes, `ai-collect status` |
 
 ---
 

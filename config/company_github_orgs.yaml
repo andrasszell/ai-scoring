@@ -1,0 +1,54 @@
+# GitHub organization slugs per ticker (Phase 2.1 entity metadata).
+# Used by the github_repos collector to scope repository search.
+# Change workflow: edit this file → change-log entry (no DB migration).
+#
+# Keep separate from config/platforms.yaml — this is entity metadata, not a data platform.
+
+# DEFAULT_TICKERS
+MSFT:
+  - microsoft
+  - Azure
+NVDA:
+  - NVIDIA
+  - NVlabs
+AMZN:
+  - aws
+  - amazon-science
+GOOGL:
+  - google
+  - tensorflow
+GOOG:
+  - google
+  - tensorflow
+META:
+  - facebook
+  - facebookresearch
+  - pytorch
+AAPL:
+  - apple
+PLTR:
+  - palantir
+CRWD:
+  - CrowdStrike
+SNOW:
+  - snowflakedb
+DDOG:
+  - DataDog
+ORCL:
+  - oracle
+IBM:
+  - IBM
+  - IBMResearch
+INTC:
+  - intel
+AMD:
+  - ROCm-Developer-Tools
+TSLA:
+  - teslamotors
+PATH:
+  - UiPath
+AI:
+  - c3ai
+
+# Block D — sector spread (add orgs when known)
+ELAN: []

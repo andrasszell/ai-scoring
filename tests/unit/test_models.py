@@ -33,9 +33,9 @@ def test_collector_result_rejects_outcome_reason_on_failure_status():
         )
 
 
-def test_get_collectors_defaults_to_enabled_phase1():
+def test_get_collectors_defaults_to_enabled_platforms():
     collectors = get_collectors()
-    assert len(collectors) == 6
+    assert len(collectors) == 9
     assert {c.name for c in collectors} == {
         "sec_filings",
         "earnings_calls",
@@ -43,6 +43,9 @@ def test_get_collectors_defaults_to_enabled_phase1():
         "hiring_jobs",
         "patents",
         "research",
+        "github_repos",
+        "press_releases",
+        "product_docs",
     }
 
 
@@ -72,4 +75,3 @@ def test_every_active_collector_has_registry_platform_id():
         assert platform is not None, collector.platform_id
         assert platform.collector == collector.name
         assert platform.enabled is True
-        assert platform.phase == 1

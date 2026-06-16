@@ -33,6 +33,16 @@ def normalize_publication_year(year) -> tuple[str, str]:
     return text, DATE_PROVENANCE_ORIGIN
 
 
+def normalize_github_datetime(value) -> tuple[str, str]:
+    """Map GitHub pushed_at ISO timestamp to source_date."""
+    if value is None:
+        return collection_date_iso(), DATE_PROVENANCE_RETRIEVAL
+    text = str(value).strip()
+    if not text:
+        return collection_date_iso(), DATE_PROVENANCE_RETRIEVAL
+    return text[:10], DATE_PROVENANCE_ORIGIN
+
+
 def job_posted_date(job: dict, *, fallback: str | None = None) -> tuple[str, str]:
     """Extract posting time from Google Jobs payload (relative text is acceptable)."""
     fb = fallback or collection_date_iso()

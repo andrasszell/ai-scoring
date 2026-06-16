@@ -2,10 +2,10 @@
 
 ## AI Adoption Intelligence Platform — Evidence Discovery Layer
 
-> **Document role:** This is the original strategic plan for Team 1 (Evidence
-> Discovery Layer): mission, architecture, standards, and phased roadmap. For
-> **current progress** (what is done vs next), see
-> [`implementation-plan.md`](implementation-plan.md).
+> **Document role:** Strategic plan for Team 1. **Current status:**
+> [`implementation-plan.md`](implementation-plan.md). **Operations:**
+> [`data-sources.md`](data-sources.md). **Phase guides:**
+> [`project-control.md`](project-control.md).
 
 ---
 
@@ -249,11 +249,12 @@ CLI: `ai-collect load-companies` (Wikipedia + SEC CIK merge).
 companies) is complete and gaps are documented. Swapping or adding a platform
 follows the **§6A.4 change workflow** (registry entry + collector + tests + docs).
 
-#### Phase 2 sources (planned — registered, disabled)
+#### Phase 2 sources (implemented — enabled in registry)
 
-Stubs in [`config/platforms.yaml`](../config/platforms.yaml): `github_repos`,
-`press_releases`, `product_documentation` (`enabled: false`, `phase: 2`). Collectors
-not implemented — adding a vendor follows the **§6A.4 change workflow**.
+GitHub (`github_repos`), press releases (`press_releases`), and product documentation
+(`product_docs`) are implemented and `enabled: true` in
+[`config/platforms.yaml`](../config/platforms.yaml). Collectors run when enabled
+regardless of `phase` number (see `registry_gate.py`).
 
 #### Phase 3 premium vendors (evaluate — registered, disabled)
 
@@ -422,9 +423,8 @@ vendor landscape visible without activating collectors.
 
 #### Reliability rules
 
-- Registry entries for `phase: 1` with `enabled: true` are **approved for production collection**.
-- `phase: 2` entries document intent; collectors must not run until promoted to phase 1.
-- Disabling a platform (`enabled: false`) preserves history and config; collectors skip it cleanly.
+- Registry entries with `enabled: true` run in default `collect` (any `phase`).
+- `enabled: false` preserves history; collectors skip with status `skipped`.
 
 ---
 
@@ -481,7 +481,7 @@ The system should preserve company identity clearly and avoid mixing evidence ac
 S&P 500 is the default scale target; **index membership is not required** to collect
 or score. Once resolved, a company row drives the same collectors regardless of tier.
 
-**Operational plan:** [`on-demand-company-scoring.md`](on-demand-company-scoring.md)
+**Operational plan:** [`phase-2-implementation.md` § 2.0](phase-2-implementation.md#block-20--on-demand-company-scoring)
 (Phase 1: `analyze` + `ai-score --ticker`; Phase 2.0: `--company` and one-shot `run`).
 
 ---
@@ -691,7 +691,7 @@ of absence. **Attempt failed** and **not attempted** must never be scored as zer
 **Implementation:** controlled `outcome_reason` codes (`source_empty`,
 `filtered_to_zero`, …) plus counters (`documents_count`, `source_hits`,
 `candidates_after_filter`). Full step-by-step plan:
-[`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md).
+[`data-sources.md` § Collection outcome semantics](data-sources.md#collection-outcome-semantics).
 
 **Storage (MVP):** prefix `collector_status.message` with `reason:code`; optional
 dedicated columns in a later migration.
@@ -859,9 +859,9 @@ ai-collect status
 
 ```bash
 ai-collect refresh --ticker MSFT
-ai-collect resolve "Company Name"          # Phase 2.0 — identity lookup only
-ai-score score --company "Company Name"    # Phase 2.0 — resolve + score
-ai-score run --company "Company Name"      # Phase 2.0 — collect + score one-shot
+ai-collect resolve "Company Name"          # identity lookup only
+ai-score score --company "Company Name"
+ai-score run --company "Company Name"      # collect (if needed) + score
 ai-collect validate-company MSFT
 ai-collect show-sources MSFT
 ai-collect inspect-evidence MSFT
@@ -987,6 +987,8 @@ high-quality evidence corpus for 25–50 companies
 
 ### Phase 2 — Expand High-Value Sources
 
+**Status:** core registry collectors implemented — see [`phase-2-implementation.md`](phase-2-implementation.md).
+
 Goal: add sources that better reveal actual AI depth.
 
 New sources:
@@ -1013,6 +1015,8 @@ multi-source evidence corpus for 100 companies
 ### Phase 3 — Scale to Full Company Universe
 
 Goal: scale collection to S&P 500 and beyond.
+
+**Step-by-step plan:** [`phase-3-development-plan.md`](phase-3-development-plan.md) (Block 3A).
 
 Tasks:
 

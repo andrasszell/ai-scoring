@@ -17,10 +17,12 @@ from .runner import run_collection
 from .universe import (
     enrich_companies,
     ensure_validation_companies,
-    fetch_sec_companies,
+    format_ambiguous_message,
     load_universe,
-    match_rows,
-    resolve_company,
+    lookup_company,
+    materialize_company,
+    upsert_tickers_from_sec,
+    github_orgs_for_ticker,
 )
 
 logger = get_logger("evidence_collection.cli")
@@ -97,8 +99,12 @@ def cmd_collect(args) -> None:
         found = {c["ticker"] for c in companies}
         missing = sorted(set(requested) - found)
         if missing:
-            print(f"Not in database (skipped): {', '.join(missing)}. "
-                  "Run `ai-collect load-companies` to load the full universe.")
+            _, still_missing = upsert_tickers_from_sec(conn, missing)
+            companies = repo.get_companies(conn, requested)
+            if still_missing:
+                print(
+                    f"Not in database or SEC filers (skipped): {', '.join(still_missing)}."
+                )
     if not companies:
         conn.close()
         raise SystemExit("No matching companies found. Run: ai-collect load-companies")
@@ -123,22 +129,17 @@ def cmd_analyze(args) -> None:
         load_universe(conn)
 
     query = " ".join(args.name).strip()
-    matches = resolve_company(conn, query)
-    if not matches:
+    result = lookup_company(conn, query)
+    if result.used_sec_fallback:
         print(f"'{query}' is not in the loaded S&P 500 universe; searching all SEC filers...")
-        matches = match_rows(fetch_sec_companies(), query)
-    if not matches:
+    if not result.matches:
         conn.close()
-        raise SystemExit(f"No company matches '{query}'. Try the exact ticker symbol.")
-    if len(matches) > 1:
-        listing = "\n".join(f"  - {m['ticker']}: {m['company_name']}" for m in matches[:15])
-        extra = "" if len(matches) <= 15 else f"\n  ...and {len(matches) - 15} more"
+        raise SystemExit(f"No company matches {query!r}. Try the exact ticker symbol.")
+    if len(result.matches) > 1:
         conn.close()
-        raise SystemExit(f"'{query}' matches multiple companies:\n{listing}{extra}\n"
-                         "Re-run with a more specific name or the exact ticker.")
+        raise SystemExit(format_ambiguous_message(query, result.matches))
 
-    company = enrich_companies(conn, [matches[0]])[0]
-    repo.upsert_companies(conn, [company])
+    company = materialize_company(conn, result.matches[0])
     print(f"Analyzing {company['ticker']} — {company['company_name']} "
           f"({company.get('sector') or 'n/a'})")
     totals = run_collection(
@@ -149,6 +150,28 @@ def cmd_analyze(args) -> None:
     conn.close()
     print(f"\nCollected {totals['evidence']} evidence items, {totals['documents']} documents "
           f"({totals['ok']} ok / {totals['failed']} failed).")
+
+
+def cmd_resolve(args) -> None:
+    conn = _conn()
+    query = " ".join(args.name).strip()
+    result = lookup_company(conn, query)
+    if result.used_sec_fallback:
+        print(f"'{query}' is not in the loaded universe; matched via SEC filers.")
+    if not result.matches:
+        conn.close()
+        raise SystemExit(f"No company matches {query!r}. Try the exact ticker symbol.")
+    if len(result.matches) > 1:
+        conn.close()
+        raise SystemExit(format_ambiguous_message(query, result.matches))
+
+    company = result.matches[0]
+    print(f"{company['ticker']} — {company.get('company_name') or 'n/a'}")
+    print(f"  CIK:             {company.get('cik') or 'n/a'}")
+    print(f"  Sector:          {company.get('sector') or 'n/a'}")
+    print(f"  Industry:        {company.get('industry') or 'n/a'}")
+    print(f"  Identifier src:  {company.get('source_of_identifier') or 'n/a'}")
+    conn.close()
 
 
 def cmd_export_evidence(args) -> None:
@@ -244,6 +267,8 @@ def format_company_identity_report(conn, ticker: str) -> str:
         f"  Industry:        {company.get('industry') or 'n/a'}",
         f"  Website domain:  {company.get('website_domain') or 'n/a'}",
     ]
+    orgs = github_orgs_for_ticker(ticker)
+    lines.append(f"  GitHub orgs:     {', '.join(orgs) if orgs else '(none — see config/company_github_orgs.yaml)'}")
     if aliases:
         lines.append("  Aliases:")
         for row in aliases:
@@ -368,7 +393,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_load_companies)
 
     s = sub.add_parser("collect", help="Collect evidence for companies.")
-    s.add_argument("--ticker", nargs="*", help="Tickers, e.g. MSFT NVDA. Default: top S&P 500.")
+    s.add_argument("--ticker", nargs="*", help="Tickers, e.g. MSFT NVDA ELAN. Missing tickers are upserted from SEC.")
     s.add_argument("--limit", type=int, default=None, help="Collect first N loaded companies.")
     s.add_argument("--all", action="store_true", help="Collect every loaded company.")
     s.add_argument(
@@ -383,6 +408,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("name", nargs="+", help="Company name or ticker, e.g. Microsoft or MSFT")
     _add_source_flag(s)
     s.set_defaults(func=cmd_analyze)
+
+    s = sub.add_parser("resolve", help="Resolve company name/ticker to identity (no collection).")
+    s.add_argument("name", nargs="+", help="Company name or ticker, e.g. Microsoft or ELAN")
+    s.set_defaults(func=cmd_resolve)
 
     s = sub.add_parser("export-evidence", help="Export evidence items (CSV or JSONL).")
     s.add_argument("--output", default="data/exports/evidence_items.csv")

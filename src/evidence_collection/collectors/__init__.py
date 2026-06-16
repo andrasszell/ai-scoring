@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from .base import Collector
 from .earnings import EarningsCallCollector
+from .github_repos import GitHubReposCollector
 from .patents import PatentsCollector
+from .press_releases import PressReleasesCollector
+from .product_docs import ProductDocsCollector
 from .research import ResearchCollector
 from .sec_filings import SecFilingsCollector
 from .serpapi import HiringCollector, ProductServiceCollector
@@ -24,6 +27,9 @@ REGISTRY: dict[str, Collector] = {
     "hiring": HiringCollector(),
     "patents": PatentsCollector(),
     "research": ResearchCollector(),
+    "github": GitHubReposCollector(),
+    "press": PressReleasesCollector(),
+    "product_docs": ProductDocsCollector(),
 }
 
 SOURCE_KEYS = list(REGISTRY.keys())
@@ -34,15 +40,16 @@ COLLECTOR_BY_NAME: dict[str, Collector] = {c.name: c for c in REGISTRY.values()}
 DOCUMENT_SOURCES: dict[str, str] = {
     "sec": "sec_annual_filing",
     "earnings": "earnings_call_transcript",
+    "product_docs": "product_documentation",
 }
 
 
 def get_collectors(sources: list[str] | None = None) -> list[Collector]:
     """Return collector instances for the requested source keys.
 
-    When ``sources`` is omitted, only phase-1 enabled platforms from the registry
-    are included. Explicit ``--source`` requests still return the collector so the
-    runner can record ``skipped`` or ``api_key_missing`` from registry rules.
+    When ``sources`` is omitted, all enabled platforms from the registry are included.
+    Explicit ``--source`` requests still return the collector so the runner can record
+    ``skipped`` or ``api_key_missing`` from registry rules.
     """
     if sources:
         unknown = [s for s in sources if s not in REGISTRY]

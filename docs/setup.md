@@ -1,6 +1,7 @@
 # Setup
 
-How to run the project (Coding Standards §13). See `../README.md` for full CLI usage.
+How to run the project (Coding Standards §13). See [`../README.md`](../README.md) for CLI overview.
+**Doc index:** [`README.md`](README.md) · [`project-control.md`](project-control.md).
 
 ## Install
 
@@ -17,10 +18,9 @@ Set at least the SEC contact (required by EDGAR fair-access):
 SEC_USER_AGENT="Your Name your.email@example.com"
 ```
 
-Optional API keys — approved platforms in
-[`data-collection-initial-plan.md` §6A](data-collection-initial-plan.md#6a-data-platform-decisions),
-detail in [`data-sources.md`](data-sources.md):
-`FMP_API_KEY`, `SERPAPI_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `PATENTSVIEW_API_KEY`.
+Optional API keys — see [`data-sources.md`](data-sources.md) for all platforms:
+`FMP_API_KEY`, `SERPAPI_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `PATENTSVIEW_API_KEY`,
+`GITHUB_TOKEN` (optional; higher GitHub rate limits).
 Collectors without their key are skipped and record an `api_key_missing` status.
 
 ## Smallest end-to-end run (no paid keys)

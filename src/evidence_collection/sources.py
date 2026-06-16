@@ -44,6 +44,11 @@ _PROFILES: dict[str, SourceProfile] = {
     "job_posting": SourceProfile(SourceCategory.JOB_POSTING, Reliability.MEDIUM, 0.50),
     "patent": SourceProfile(SourceCategory.REGULATORY_FILING, Reliability.MEDIUM, 0.55),
     "research_paper": SourceProfile(SourceCategory.THIRD_PARTY_DATABASE, Reliability.MEDIUM, 0.45),
+    "github_repository": SourceProfile(SourceCategory.THIRD_PARTY_DATABASE, Reliability.MEDIUM, 0.50),
+    "press_release": SourceProfile(SourceCategory.PRESS_RELEASE, Reliability.MEDIUM, 0.45),
+    "product_documentation": SourceProfile(
+        SourceCategory.PRODUCT_DOCUMENTATION, Reliability.HIGH, 0.65
+    ),
 }
 
 _DEFAULT = SourceProfile(SourceCategory.UNKNOWN, Reliability.UNKNOWN, 0.30)

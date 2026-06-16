@@ -1,19 +1,42 @@
 # Project Control
 
 Current scope, non-goals, and architecture for the AI Adoption Intelligence Platform.
-This is the top-level control document referenced by the Coding Standards (§13).
+Top-level control document (Coding Standards §13).
+
+---
+
+## Documentation index
+
+**Quick start:** [`README.md`](README.md) — one-page map to all docs.
+
+### Required (Coding Standards §13)
 
 | Document | Role |
 |---|---|
-| [`phase-1-development-plan.md`](phase-1-development-plan.md) | **Step-by-step Phase 1 checklist** (implement in order) |
-| [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md) | **Block F** — source empty vs filtered-to-zero vs failure |
-| [`on-demand-company-scoring.md`](on-demand-company-scoring.md) | **Phase 2.0** — score any company by name (S&P = bulk default) |
-| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = platforms**, **§6A.4 = registry**, **§12 = status** |
-| [`implementation-plan.md`](implementation-plan.md) | Current progress; Phase 1 task checklist |
-| [`project-control.md`](project-control.md) | Scope, non-goals, architecture decisions |
-| [`data-sources.md`](data-sources.md) | Operational detail; synced from registry (Phase 1) |
-| [`scoring-methodology.md`](scoring-methodology.md) | Inference-layer scoring (Team 2) |
-| [`change-log.md`](change-log.md) | Important decisions and changes |
+| [`project-control.md`](project-control.md) | Scope, architecture, this index |
+| [`implementation-plan.md`](implementation-plan.md) | **Living status** — what is done / next |
+| [`data-sources.md`](data-sources.md) | Platforms, env keys, **outcome semantics**, validation sample |
+| [`scoring-methodology.md`](scoring-methodology.md) | Formulas, weights, scoring rules (Team 2) |
+| [`change-log.md`](change-log.md) | Decisions and changes |
+| [`setup.md`](setup.md) | Install, env, smallest E2E run |
+
+### Phase implementation guides
+
+| Document | Role |
+|---|---|
+| [`phase-1-development-plan.md`](phase-1-development-plan.md) | Phase 1 checklist (complete — historical) |
+| [`phase-2-implementation.md`](phase-2-implementation.md) | **Phase 2 reference** (complete — 2.0–2.3) |
+| [`phase-3-development-plan.md`](phase-3-development-plan.md) | Phase 3 checklist (planned) |
+
+### Strategic & reference
+
+| Document | Role |
+|---|---|
+| [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategy; **§6A** registry schema; **§6A.4** change workflow |
+| [`reference/`](reference/) | Vision / white-paper notes (not implementation guides) |
+| [`qa/`](qa/) | Validation run notes and spot-checks (historical) |
+
+---
 
 ## Architecture
 
@@ -26,56 +49,36 @@ Two layers with a strict separation of duties (Coding Standards §2):
 
 The collection layer **never scores**. The inference layer **never fetches**.
 
-## Folder-layout deviation (approved)
+### Folder-layout deviation (approved)
 
-The Coding Standards §3 suggest a single-package layout
-(`/src/collection`, `/processing`, `/scoring`, `/models`, `/storage`, `/cli`).
+Coding Standards §3 suggest a single-package layout. We use **two installable packages**
+(`ai-collect`, `ai-score`) so the collection/scoring boundary is enforceable at the
+package level. Module layout preserves the standard's intent — see [`setup.md`](setup.md).
 
-We deliberately deviate to **two installable packages** instead, because:
-
-- the two packages map 1:1 to the two teams and ship two separate console
-  scripts (`ai-collect`, `ai-score`);
-- it makes the "collection must not import scoring" boundary enforceable at the
-  package level, not just by convention.
-
-The standard's *intent* (clear collection / processing / scoring / storage / cli
-separation) is preserved via modules inside each package:
-
-```
-src/evidence_collection/
-  collectors/   # source connectors (≈ /collection)
-  extraction.py # text → candidate evidence (≈ /processing)
-  db/           # connection, migrations, repository (≈ /storage)
-  models.py     # shared dataclasses (≈ /models)
-  sources.py    # source taxonomy + reliability (§6)
-  cli.py        # entry point (≈ /cli)
-src/inference/
-  scoring.py    # formulas, weights (≈ /scoring)
-  cli.py
-```
+---
 
 ## Scope (now)
 
-- **Phase 0–1 + Block F (done):** six core collectors, validation sample, outcome
-  semantics, exports, 150 tests.
-- **Primary bulk universe:** S&P 500 via `load-companies` (Phase 3: scheduled full refresh).
-- **On-demand universe:** any resolvable **SEC-listed** company by name or ticker via
-  `ai-collect analyze` today; Phase 2.0 adds `ai-score --company` and one-shot `run`
-  ([`on-demand-company-scoring.md`](on-demand-company-scoring.md)).
-- **Phase 2 (next):** on-demand scoring polish + high-value source platforms.
-- **Phase 3+:** scale, cost tracking, production handoff.
+| Phase | Status | Doc |
+|---|---|---|
+| 0–1 + Block F | Done | [`phase-1-development-plan.md`](phase-1-development-plan.md) |
+| 2.0–2.3 | Done | [`phase-2-implementation.md`](phase-2-implementation.md) |
+| 3 | Next | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
+| 4 | Planned | [`data-collection-initial-plan.md`](data-collection-initial-plan.md) |
+
+- **Collectors:** 9 enabled (6 Phase 1 + 3 Phase 2). **188 tests.**
+- **Scoring:** `ai_adoption_score_v0_5` (nine pillars).
+- **Bulk universe:** S&P 500 via `load-companies` (Phase 3: full refresh at scale).
+- **On-demand:** any SEC-listed company by name — Phase 2.0 in [`phase-2-implementation.md`](phase-2-implementation.md).
 
 ## Non-goals (collection layer)
 
-- final AI adoption score, weighting models, uncertainty/sensitivity analysis;
-- interpreting strategic meaning beyond candidate-evidence extraction;
-- premium/licensed sources (Phase 3 evaluation only).
+- Final score interpretation beyond candidate-evidence extraction.
+- Premium/licensed sources without Phase 3B evaluation.
+- Automatic scheduling / production API (Phase 4).
 
-## Three invariants every change must preserve (Coding Standards §1)
+## Three invariants (Coding Standards §1)
 
-1. **Evidence traceability** — every evidence item links to a source URL/date,
-   a stored document, a `raw_hash`, and the collector name+version.
-2. **Scoring explainability** — scores derive only from visible signals + named,
-   versioned formulas (inference layer).
-3. **Reproducibility** — migrations + preserved raw responses let another developer
-   reproduce the corpus.
+1. **Evidence traceability** — source URL/date, document, `raw_hash`, collector name+version.
+2. **Scoring explainability** — versioned formulas, visible weights, per-pillar explanation.
+3. **Reproducibility** — migrations, raw responses, `reprocess` for document-backed sources.

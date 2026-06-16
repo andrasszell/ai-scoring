@@ -168,7 +168,7 @@ platforms:
     collector_version: "1.0.0"
     notes: Company name match on papers; not all corporate research is indexed.
 
-  # --- Phase 2: planned — platform TBD, collectors not implemented ---
+  # --- Phase 2: GitHub open-source activity ---
 
   - id: github_repos
     collector: github_repos
@@ -181,52 +181,59 @@ platforms:
       env_key: GITHUB_TOKEN
       required: false
     phase: 2
-    enabled: false
+    enabled: true
     cost_model: free
     rate_limit_notes: Authenticated requests recommended for higher limits.
     source_category: third_party_database
     source_reliability: medium
     confidence_initial: 0.50
     reprocessable: false
-    notes: Open-source AI activity signal. Collector not implemented in Phase 1.
+    collector_version: "1.0.0"
+    notes: Org slugs in config/company_github_orgs.yaml. Collector enabled Phase 2.1.
+
+  # --- Phase 2: press releases (SerpAPI) ---
 
   - id: press_releases
     collector: press_releases
     cli_source: press
     source_type: press_release
     display_name: Company press releases
-    vendor: TBD
-    api_base_url: ""
+    vendor: SerpAPI Google web
+    api_base_url: https://serpapi.com
     auth:
-      env_key: ""
+      env_key: SERPAPI_API_KEY
       required: false
     phase: 2
-    enabled: false
-    cost_model: unknown
+    enabled: true
+    cost_model: paid
+    rate_limit_notes: Shares SerpAPI quota with products/hiring collectors.
     source_category: press_release
     source_reliability: medium
     confidence_initial: 0.45
     reprocessable: false
-    notes: Source vendor TBD (RSS, IR pages, or licensed feed).
+    collector_version: "1.0.0"
+    notes: site-restricted when website_domain known; SerpAPI press-release search.
 
   - id: product_documentation
     collector: product_docs
     cli_source: product_docs
     source_type: product_documentation
     display_name: Product and developer documentation
-    vendor: TBD
-    api_base_url: ""
+    vendor: SerpAPI discovery + first-party fetch
+    api_base_url: https://serpapi.com
     auth:
-      env_key: ""
+      env_key: SERPAPI_API_KEY
       required: false
     phase: 2
-    enabled: false
-    cost_model: unknown
+    enabled: true
+    cost_model: paid
+    rate_limit_notes: SerpAPI search plus HTTP fetch of on-domain doc pages.
     source_category: product_documentation
     source_reliability: high
     confidence_initial: 0.65
     reprocessable: true
-    notes: First-party docs; high value for AI product signals.
+    collector_version: "1.0.0"
+    notes: Requires website_domain; stores page text for ai-collect reprocess.
 
   # --- Phase 3: premium vendors — evaluate before enabling ---
 
