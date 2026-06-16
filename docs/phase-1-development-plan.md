@@ -669,6 +669,10 @@ git status   # no .env, no data/*.sqlite committed
 
 ## Block E — Phase 2 starters (do not start yet)
 
+**Before new platforms:** complete **Phase 2.0 on-demand scoring** polish
+([`on-demand-company-scoring.md`](on-demand-company-scoring.md)) — `ai-score
+--company`, optional one-shot `run`, `collect --ticker` SEC auto-upsert.
+
 These are Phase 2 platform additions — listed so you know where Phase 1 ends:
 
 1. Add Phase 2 platform row to YAML (`enabled: false` → develop → `enabled: true`).

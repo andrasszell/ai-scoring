@@ -35,7 +35,9 @@ The registry is the approval record; collectors implement fetch logic.
 | `sec_company_tickers` | SEC company tickers | U.S. Securities and Exchange Commission | `SEC_USER_AGENT` (required) | 1 | yes | `load-companies` |
 
 CLI: `ai-collect load-companies` merges Wikipedia sector/industry with SEC CIKs.
-The SEC filer list is also used as the fallback universe for `ai-collect analyze`.
+The SEC filer list is also used as the fallback universe for `ai-collect analyze`
+(on-demand companies outside the S&P 500 load). See
+[`on-demand-company-scoring.md`](on-demand-company-scoring.md).
 
 ### Evidence collectors (Phase 1 — enabled)
 

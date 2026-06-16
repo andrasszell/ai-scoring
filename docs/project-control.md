@@ -7,6 +7,7 @@ This is the top-level control document referenced by the Coding Standards (§13)
 |---|---|
 | [`phase-1-development-plan.md`](phase-1-development-plan.md) | **Step-by-step Phase 1 checklist** (implement in order) |
 | [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md) | **Block F** — source empty vs filtered-to-zero vs failure |
+| [`on-demand-company-scoring.md`](on-demand-company-scoring.md) | **Phase 2.0** — score any company by name (S&P = bulk default) |
 | [`data-collection-initial-plan.md`](data-collection-initial-plan.md) | Team 1 strategic plan; **§6A = platforms**, **§6A.4 = registry**, **§12 = status** |
 | [`implementation-plan.md`](implementation-plan.md) | Current progress; Phase 1 task checklist |
 | [`project-control.md`](project-control.md) | Scope, non-goals, architecture decisions |
@@ -55,11 +56,14 @@ src/inference/
 
 ## Scope (now)
 
-- Phase 0 (done): separate collection from scoring; standardized evidence/document
-  schema; collector runs/status; raw-response preservation; clean exports.
-- Phase 0.5 (in progress): align to Coding Standards — source quality fields,
-  required docs, test/fixture structure.
-- Phase 1 (next): stabilize the 6 core collectors; validate 25–50 companies.
+- **Phase 0–1 + Block F (done):** six core collectors, validation sample, outcome
+  semantics, exports, 150 tests.
+- **Primary bulk universe:** S&P 500 via `load-companies` (Phase 3: scheduled full refresh).
+- **On-demand universe:** any resolvable **SEC-listed** company by name or ticker via
+  `ai-collect analyze` today; Phase 2.0 adds `ai-score --company` and one-shot `run`
+  ([`on-demand-company-scoring.md`](on-demand-company-scoring.md)).
+- **Phase 2 (next):** on-demand scoring polish + high-value source platforms.
+- **Phase 3+:** scale, cost tracking, production handoff.
 
 ## Non-goals (collection layer)
 

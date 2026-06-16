@@ -36,6 +36,10 @@ tracks current progress only.
   `source_empty` vs `filtered_to_zero` vs failure vs not attempted; expose in
   status/CLI; inference guardrails (`ai_adoption_score_v0_2`). **150 tests (2026-06-16).**
 - [ ] **Phase 2 — High-value sources:** add platforms via registry + new collectors.
+- [ ] **Phase 2.0 — On-demand company scoring:** score any SEC-listed (or resolved)
+  company by name/ticker, not only S&P 500 — see
+  [`on-demand-company-scoring.md`](on-demand-company-scoring.md). Partial today via
+  `ai-collect analyze` + `ai-score score --ticker`; Phase 2 adds `--company` and optional one-shot `run`.
 - [ ] **Phase 3 — Scale to full universe:** full S&P 500, API-cost tracking,
   incremental refresh, freshness monitoring, failed-source retry queue.
 - [ ] **Phase 4 — Productionize handoff:** versioned snapshots, field-definition
@@ -102,6 +106,22 @@ Edit config/platforms.yaml → collector adapter → tests → sync docs → val
 | F.6 | Re-run validation sample + QA note | [x] |
 
 Step-by-step: [`post-phase-1-collection-outcomes-plan.md`](post-phase-1-collection-outcomes-plan.md).
+
+### 6. On-demand company scoring (Phase 2.0 — planned)
+
+Score companies **outside the default S&P 500 load** or by **free-text name**.
+Full plan: [`on-demand-company-scoring.md`](on-demand-company-scoring.md).
+
+| # | Task | Done |
+|---|---|---|
+| 2.0.1 | Document workflow (ad-hoc vs bulk S&P) | [x] |
+| 2.0.2 | `ai-score score --company "Name"` (resolve + score existing evidence) | [ ] |
+| 2.0.3 | `ai-score run --company "Name"` (optional collect + score one-shot) | [ ] |
+| 2.0.4 | `collect --ticker` auto-upsert from SEC when missing from DB | [ ] |
+| 2.0.5 | `ai-collect resolve "Name"` dry-run identity lookup | [ ] |
+| 2.0.6 | Tests for non-S&P filer + score-by-name paths | [ ] |
+
+**Phase 1 interim:** `ai-collect analyze "<name>"` then `ai-score score --ticker SYMBOL`.
 
 ---
 

@@ -2,6 +2,15 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — On-demand company scoring plan (Phase 2.0)
+
+- **New plan:** [`on-demand-company-scoring.md`](on-demand-company-scoring.md) — score
+  any SEC-listed company by name/ticker; S&P 500 remains bulk default.
+- **Phase 1 today:** `ai-collect analyze "<name>"` + `ai-score score --ticker`.
+- **Phase 2.0 planned:** `ai-score --company`, one-shot `run`, `collect --ticker` SEC upsert.
+- Docs synced: `implementation-plan.md`, `project-control.md`, `scoring-methodology.md`,
+  `data-sources.md`, `data-collection-initial-plan.md` §7, README, `phase-1-development-plan.md`.
+
 ## 2026-06-16 — Block F audit cleanup
 
 - Docs synced: `data-sources.md`, `scoring-methodology.md` v0_2 worked example,

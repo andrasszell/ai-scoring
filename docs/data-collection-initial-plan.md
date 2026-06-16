@@ -470,6 +470,20 @@ Alphabet may refer to Class A or Class C shares.
 
 The system should preserve company identity clearly and avoid mixing evidence across related but distinct entities.
 
+### Universe tiers (bulk vs on-demand)
+
+| Tier | Source | CLI |
+|---|---|---|
+| **S&P 500 (primary bulk)** | Wikipedia constituents + SEC CIK merge | `load-companies`, `collect --all` |
+| **Custom / validation lists** | YAML + SEC fallback | `load-companies --validation-set`, `collect --validation-set` |
+| **Ad-hoc (any SEC filer)** | SEC `company_tickers.json` fallback on name lookup | `analyze "Company Name"` |
+
+S&P 500 is the default scale target; **index membership is not required** to collect
+or score. Once resolved, a company row drives the same collectors regardless of tier.
+
+**Operational plan:** [`on-demand-company-scoring.md`](on-demand-company-scoring.md)
+(Phase 1: `analyze` + `ai-score --ticker`; Phase 2.0: `--company` and one-shot `run`).
+
 ---
 
 ## 8. Evidence Object Standard
@@ -835,6 +849,7 @@ ai-collect collect --ticker MSFT
 ai-collect collect --all
 ai-collect collect --source sec
 ai-collect collect --source hiring
+ai-collect analyze "Company Name"          # on-demand: resolve + collect one company
 ai-collect export-evidence
 ai-collect export-documents
 ai-collect status
@@ -844,6 +859,9 @@ ai-collect status
 
 ```bash
 ai-collect refresh --ticker MSFT
+ai-collect resolve "Company Name"          # Phase 2.0 — identity lookup only
+ai-score score --company "Company Name"    # Phase 2.0 — resolve + score
+ai-score run --company "Company Name"      # Phase 2.0 — collect + score one-shot
 ai-collect validate-company MSFT
 ai-collect show-sources MSFT
 ai-collect inspect-evidence MSFT

@@ -1,6 +1,10 @@
 # AI Depth Score — Methodology (MVP)
 
-*A plain-language guide for finance colleagues to how we measure how deeply S&P 500 companies use AI.*
+*A plain-language guide for finance colleagues to how we measure how deeply companies use AI.*
+
+> **Universe note:** S&P 500 is the **primary bulk universe**, but you can score
+> **any SEC-listed company** on demand — see
+> [`on-demand-company-scoring.md`](on-demand-company-scoring.md).
 
 > **Status: MVP / proof of concept.** The pipeline end-to-end works and produces
 > scores today, but the scoring is a deliberately simple first version. Please
@@ -279,9 +283,17 @@ because their AI work shows up in products/patents we haven't enabled — not be
 they don't use AI.
 
 **Can we add companies outside the default list?**
-Yes — any S&P 500 company can be collected on request, or the entire index at once.
-We can also analyze **any SEC-listed company** by name (even non-index ones, e.g.
-Elanco Animal Health); the tool falls back to the full SEC filer directory.
+Yes. Three paths:
+
+1. **S&P 500 bulk** — `ai-collect load-companies` then `collect --all` or `--ticker`.
+2. **Ad-hoc by name (today)** — `ai-collect analyze "Company Name"` resolves the
+   ticker (SEC fallback for non-index filers), collects evidence, then
+   `ai-score score --ticker SYMBOL`.
+3. **Phase 2.0 (planned)** — `ai-score score --company "Name"` and optional
+   `ai-score run --company "Name"` (collect + score in one step).
+
+See [`on-demand-company-scoring.md`](on-demand-company-scoring.md) for limits
+(private / non-US companies may have incomplete SEC pillar coverage).
 
 **How auditable is it?**
 Fully. Every score decomposes into pillar points, and every pillar decomposes into

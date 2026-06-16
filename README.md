@@ -103,6 +103,15 @@ ai-collect analyze NVDA --source sec
 `analyze` resolves the name (exact → prefix → substring), falls back to all SEC
 filers for non-index companies, and lists candidates when a name is ambiguous.
 
+**Score that company** (inference layer — separate step today):
+
+```bash
+ai-score score --ticker MSFT --persist
+```
+
+Full ad-hoc workflow and Phase 2.0 plans (`--company`, one-shot `run`):
+[`docs/on-demand-company-scoring.md`](docs/on-demand-company-scoring.md).
+
 ## Export for the inference team
 
 ```bash
@@ -123,6 +132,11 @@ ai-score score --ticker MSFT NVDA            # prints per-driver explanation
 ai-score score --persist                     # also writes versioned rows to scores table
 ai-score export-scores --output data/exports/ai_depth_scores.csv
 ```
+
+Companies need evidence first (`ai-collect collect` or `analyze`). For names
+outside the S&P 500 load, use `ai-collect analyze "Company Name"` then
+`ai-score score --ticker SYMBOL`. Planned: `ai-score score --company "Name"`.
+See [`docs/on-demand-company-scoring.md`](docs/on-demand-company-scoring.md).
 
 The current scorer is the MVP heuristic carried over from the prototype: it counts
 evidence items per collector, caps each signal, and produces a weighted 0–100
