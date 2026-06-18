@@ -245,6 +245,33 @@ Inspect: `ai-collect status`, `ai-collect validate-company TICKER`.
 
 ---
 
+## Rate limits and retry (Phase 3A.4)
+
+Collectors never abort a full run on transient failures — status is recorded per
+(ticker, source). Re-run failed pairs with:
+
+```bash
+ai-collect retry-failed --dry-run              # list latest failures
+ai-collect retry-failed                        # retry rate_limited + source_unavailable
+ai-collect retry-failed --source product_docs  # limit to one collector
+```
+
+**Retryable statuses:** `rate_limited`, `source_unavailable`, `api_limit_reached`
+(latest row per ticker×source only).
+
+| Vendor | Backoff / limit notes |
+|---|---|
+| SEC EDGAR | ~0.25s between requests (`http.py`); descriptive `SEC_USER_AGENT` required |
+| Semantic Scholar | ~1 req/s with API key; unauthenticated shared pool is heavily rate-limited |
+| SerpAPI | Per-plan search quota; shared key across web/jobs/press/product_docs |
+| GitHub | Higher limits with `GITHUB_TOKEN`; search API strict without token |
+| FMP / PatentsView | Plan-dependent; PatentsView Search API may be unavailable (migrate to USPTO ODP) |
+
+After a pilot or full run, use `ai-collect retry-failed` before re-collecting the
+entire universe. For scheduled refresh, see Phase 3A.5 (`--stale-days`).
+
+---
+
 ## Changing an approved platform
 
 Follow **[§6A.4 change workflow](data-collection-initial-plan.md#6a4-platform-registry-single-source-of-truth)**:

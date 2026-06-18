@@ -2,6 +2,32 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-16 — Phase 3A pilot closed (3A.1–3A.4)
+
+- Pilot collect 50/50 tickers; validate 0 violations; export `phase3_pilot_20260616/`.
+- Research 50/50 after Semantic Scholar key fix; `retry-failed` for SerpAPI/product_docs.
+- Prerequisites and test counts synced (208). QA: [`qa/phase-3-pilot-run.md`](qa/phase-3-pilot-run.md).
+- **Next:** 3A.5 `--stale-days` incremental refresh.
+
+## 2026-06-16 — Phase 3A.4: retry-failed command
+
+- **`ai-collect retry-failed`** — re-run latest `rate_limited` / `source_unavailable` /
+  `api_limit_reached` pairs; `--dry-run`, `--source`, `--ticker` filters.
+- **`src/evidence_collection/retry.py`**, `run_targeted_collection()` in `runner.py`,
+  `repo.failed_status_rows()`.
+- Backoff/retry policy documented in [`data-sources.md`](data-sources.md#rate-limits-and-retry-phase-3a4).
+- **208 tests.**
+
+## 2026-06-16 — Phase 3A started: pilot set, universe verify, API cost tracking
+
+- **`config/phase3_pilot_companies.yaml`** — 50-ticker pilot corpus (validation 35 + 15).
+- **`config/api_cost_estimates.yaml`** — USD-per-call estimates for cost reporting.
+- **CLI:** `ai-collect verify-universe` (3A.1), `collect/load-companies --pilot-set`,
+  `ai-collect costs [--run-id] [--project-full-sp500]`.
+- **`src/evidence_collection/costs.py`** — summarize run API costs from `collector_status.api_calls`.
+- **Entity metadata:** expanded `company_domains.yaml` (+15) and `company_github_orgs.yaml` (+5).
+- **201 tests.**
+
 ## 2026-06-16 — Documentation consolidation
 
 - **Merged** `on-demand-company-scoring.md` → [`phase-2-implementation.md`](phase-2-implementation.md) § 2.0 (deleted redundant file).

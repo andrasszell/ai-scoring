@@ -1,6 +1,6 @@
 # Phase 2 — Implementation Reference (complete)
 
-**Status:** complete (2026-06-16) · **188 tests**
+**Status:** complete (2026-06-16) · **208 tests** (Phase 3A adds pilot/retry/cost tooling on same suite)
 
 Phase 2 adds **on-demand company scoring** (any SEC-listed name, not only S&P 500)
 and **three new evidence collectors** (GitHub, press releases, product documentation).

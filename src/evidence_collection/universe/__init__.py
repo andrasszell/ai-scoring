@@ -8,6 +8,13 @@ from .validation import (
     load_validation_entries,
     validation_tickers,
 )
+from .pilot import (
+    default_pilot_path,
+    ensure_pilot_companies,
+    load_pilot_entries,
+    pilot_includes_validation,
+    pilot_tickers,
+)
 from .entity import (
     QUERY_ALIASES,
     clean_company_name,
@@ -43,6 +50,11 @@ __all__ = [
     "load_validation_entries",
     "validation_tickers",
     "ensure_validation_companies",
+    "default_pilot_path",
+    "load_pilot_entries",
+    "pilot_tickers",
+    "ensure_pilot_companies",
+    "pilot_includes_validation",
     "QUERY_ALIASES",
     "clean_company_name",
     "search_name",

@@ -36,6 +36,8 @@ SOURCE_KEYS = list(REGISTRY.keys())
 
 COLLECTOR_BY_NAME: dict[str, Collector] = {c.name: c for c in REGISTRY.values()}
 
+SOURCE_KEY_BY_COLLECTOR_NAME: dict[str, str] = {c.name: key for key, c in REGISTRY.items()}
+
 # Document-backed sources that can be re-extracted offline from stored text.
 DOCUMENT_SOURCES: dict[str, str] = {
     "sec": "sec_annual_filing",
@@ -62,6 +64,7 @@ def get_collectors(sources: list[str] | None = None) -> list[Collector]:
 
 __all__ = [
     "COLLECTOR_BY_NAME",
+    "SOURCE_KEY_BY_COLLECTOR_NAME",
     "Collector",
     "DOCUMENT_SOURCES",
     "REGISTRY",

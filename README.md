@@ -77,6 +77,11 @@ ai-collect load-companies --validation-set  # also ensure Phase 1 validation tic
 ai-collect validate-company MSFT            # inspect identity, aliases, collection status
 ai-collect collect --ticker MSFT NVDA       # specific companies (all sources)
 ai-collect collect --validation-set         # Phase 1 sample (35 tickers from config)
+ai-collect collect --pilot-set              # Phase 3 pilot (50 tickers from config)
+ai-collect verify-universe                  # Phase 3A.1 coverage report
+ai-collect retry-failed --dry-run           # list failed pairs (Phase 3A.4)
+ai-collect retry-failed                     # retry rate_limited / source_unavailable
+ai-collect costs --project-full-sp500       # API cost estimate from latest run
 ai-collect collect --source sec research github press product_docs    # limit sources
 ai-collect reprocess --source product_docs --ticker MSFT              # offline re-extract
 ai-collect collect --all                    # every loaded company
@@ -205,6 +210,6 @@ CI runs the tests on Python 3.10–3.12 via GitHub Actions.
   [`docs/phase-1-development-plan.md`](docs/phase-1-development-plan.md).
 - **Phase 2 (done):** on-demand scoring, GitHub, press releases, product documentation —
   [`docs/phase-2-implementation.md`](docs/phase-2-implementation.md).
-- **Phase 3 (next):** full S&P 500 scale, API-cost tracking, incremental refresh —
+- **Phase 3 (in progress):** 50-ticker pilot, universe verify, API cost tracking —
   [`docs/phase-3-development-plan.md`](docs/phase-3-development-plan.md).
 - **Phase 4:** versioned evidence snapshots + field-definition docs for the inference team.

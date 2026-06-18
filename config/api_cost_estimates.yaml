@@ -1,0 +1,23 @@
+# Estimated USD per API call for planning (Phase 3A cost tracking).
+# Not billing truth — update when vendor pricing changes; change-log entry required.
+# Keys match platform id in config/platforms.yaml.
+
+version: "1"
+currency: USD
+notes: >
+  SerpAPI plans vary; default assumes ~$0.01/search on a mid-tier plan.
+  FMP transcript pricing depends on subscription tier.
+
+platforms:
+  sec_edgar: 0.0
+  fmp_transcripts: 0.05
+  serpapi_web: 0.01
+  serpapi_jobs: 0.01
+  patentsview: 0.0
+  semantic_scholar: 0.0
+  github_repos: 0.0
+  press_releases: 0.01
+  product_documentation: 0.012
+  lightcast: 0.25
+  alphasense: 0.50
+  revelio: 0.30

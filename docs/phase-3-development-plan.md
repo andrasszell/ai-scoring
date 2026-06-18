@@ -57,11 +57,12 @@ Insights, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith.
 
 ## Prerequisites (before Phase 3A)
 
-- [x] Phase 2 complete — 9 collectors, `ai_adoption_score_v0_5`, 188 tests.
-- [ ] Full S&P 500 loads cleanly: `ai-collect load-companies` (no CIK gaps for index tickers).
-- [ ] API keys provisioned for paid pillars you intend to run at scale (`SERPAPI_API_KEY`, `FMP_API_KEY`, etc.).
-- [ ] Entity metadata seeded for scale: expand `company_domains.yaml` and `company_github_orgs.yaml` beyond validation set.
-- [ ] Baseline cost estimate: one full validation-set collect with API call counts from `collector_status.api_calls`.
+- [x] Phase 2 complete — 9 collectors, `ai_adoption_score_v0_5`, 208 tests.
+- [x] Full S&P 500 loads cleanly: `ai-collect load-companies` (509 companies, all CIK).
+- [x] API keys provisioned for scale pillars in use: `SERPAPI_API_KEY`, `FMP_API_KEY`,
+  `SEMANTIC_SCHOLAR_API_KEY` ok; `PATENTSVIEW_API_KEY` skipped (API unavailable).
+- [x] Entity metadata seeded for **pilot set**: `company_domains.yaml` (51 tickers) + `company_github_orgs.yaml` (23 tickers).
+- [x] Baseline cost estimate: pilot collect + `ai-collect costs --project-full-sp500` (~$32/full S&P).
 
 ---
 
@@ -94,35 +95,38 @@ Insights, FactSet, PitchBook, CB Insights, Similarweb, BuiltWith.
 
 **Done when:**
 
-- [ ] `ai-collect load-companies` completes without error.
-- [ ] `SELECT COUNT(*) FROM companies` ≥ 490 (allow Wikipedia/SEC merge gaps).
-- [ ] Spot-check 10 tickers: CIK present, `website_domain` where expected.
+- [x] `ai-collect load-companies` completes without error.
+- [x] `SELECT COUNT(*) FROM companies` ≥ 490 (509 in DB).
+- [x] Spot-check 10 tickers: CIK present, `website_domain` where expected.
 
 **Verify:**
 
 ```bash
-ai-collect load-companies
-sqlite3 data/evidence.sqlite "SELECT COUNT(*) FROM companies;"
+ai-collect load-companies --pilot-set   # ensure 50 pilot tickers + domains
+ai-collect verify-universe              # coverage report + spot-check
 ai-collect validate-company MSFT JPM XOM
 ```
 
 ---
 
-### Step 3A.2 — Full S&P 500 collection pilot (subset first)
+### Step 3A.2 — Full S&P 500 collection pilot (50-ticker pilot)
 
-**Goal:** Run all 9 collectors on a **50-ticker pilot** before full index.
+**Goal:** Run all 9 collectors on the **50-ticker pilot** (`config/phase3_pilot_companies.yaml`) before full index.
 
 **Done when:**
 
-- [ ] `ai-collect collect --limit 50` (or explicit ticker list) completes.
-- [ ] `ai-collect validate` → 0 violations, `missing_outcome_reason` = 0.
-- [ ] Export bundle captured for review.
+- [x] `ai-collect collect --pilot-set` completes.
+- [x] `ai-collect validate` → 0 violations, `missing_outcome_reason` = 0.
+- [x] Export bundle captured for review.
+- [x] `ai-collect costs --project-full-sp500` documents baseline estimate (~$32/full S&P).
 
 **Verify:**
 
 ```bash
-ai-collect collect --limit 50
+ai-collect load-companies --pilot-set
+ai-collect collect --pilot-set
 ai-collect validate
+ai-collect costs --project-full-sp500
 ai-collect export-all --output-dir data/exports/phase3_pilot_YYYYMMDD
 ```
 
@@ -136,16 +140,16 @@ ai-collect export-all --output-dir data/exports/phase3_pilot_YYYYMMDD
 
 - Extend `collection_metrics` or new `api_cost_events` table.
 - Each collector reports `api_calls` (already on `collector_status`).
-- Map platform `cost_model` + call counts to estimated USD (config table, not hardcoded in collectors).
-- CLI: `ai-collect status --costs` or export column in run summary.
+- Map platform `cost_model` + call counts to estimated USD — [`config/api_cost_estimates.yaml`](../config/api_cost_estimates.yaml).
+- CLI: `ai-collect costs [--run-id N] [--project-full-sp500]`; collect summary prints est. USD.
 
-**Files (TBD):** `src/evidence_collection/runner.py`, `db/migrations.py`, `config/api_cost_estimates.yaml`
+**Files:** `src/evidence_collection/costs.py`, `src/evidence_collection/runner.py`, `config/api_cost_estimates.yaml`
 
 **Done when:**
 
-- [ ] Pilot run produces per-source call totals.
-- [ ] Documented cost estimate for full S&P × 9 collectors.
-- [ ] Tests for metric persistence.
+- [x] Pilot run produces per-source call totals (`ai-collect costs`).
+- [x] Documented cost estimate for full S&P × 9 collectors (pilot projection ~$32/run).
+- [x] Tests for metric persistence and cost summarization.
 
 ---
 
@@ -155,9 +159,9 @@ ai-collect export-all --output-dir data/exports/phase3_pilot_YYYYMMDD
 
 **Done when:**
 
-- [ ] Failed statuses queryable: `SELECT … WHERE status IN ('rate_limited','source_unavailable')`.
-- [ ] Documented backoff policy per vendor (GitHub, SerpAPI, SEC, Semantic Scholar).
-- [ ] Optional: `ai-collect retry-failed` command (re-run only failed ticker×source pairs).
+- [x] Failed statuses queryable: `repo.failed_status_rows()` / `ai-collect retry-failed --dry-run`.
+- [x] Documented backoff policy per vendor (GitHub, SerpAPI, SEC, Semantic Scholar) — [`data-sources.md`](data-sources.md#rate-limits-and-retry-phase-3a4).
+- [x] `ai-collect retry-failed` command (re-run only failed ticker×source pairs).
 
 ---
 
@@ -277,10 +281,13 @@ config/platforms.yaml → collector → tests → enabled: true → docs → val
 
 ```bash
 # Scale (as implemented in 3A)
-ai-collect load-companies
+ai-collect load-companies --pilot-set
+ai-collect verify-universe
+ai-collect collect --pilot-set
+ai-collect costs --project-full-sp500
 ai-collect collect --all
 ai-collect collect --stale-days 30      # planned 3A.5
-ai-collect retry-failed                 # planned 3A.4
+ai-collect retry-failed                 # 3A.4 — retry rate_limited / source_unavailable
 ai-collect freshness                    # planned 3A.6
 
 # Premium (as implemented in 3B)

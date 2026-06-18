@@ -49,3 +49,20 @@ IBM: ibm.com
 INTC: intel.com
 CSCO: cisco.com
 AMD: amd.com
+
+# Phase 3 pilot extension (15 tickers)
+COST: costco.com
+HD: homedepot.com
+DIS: disney.com
+NFLX: netflix.com
+ADBE: adobe.com
+CRM: salesforce.com
+V: visa.com
+MA: mastercard.com
+PEP: pepsico.com
+ABBV: abbvie.com
+MRK: merck.com
+TMO: thermofisher.com
+LIN: linde.com
+RTX: rtx.com
+CAT: caterpillar.com

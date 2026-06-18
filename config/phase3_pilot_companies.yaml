@@ -1,0 +1,143 @@
+# Phase 3A pilot corpus — 50 tickers (validation set + 15 additional large caps).
+# Used by: ai-collect collect --pilot-set
+# Change workflow: edit → load-companies → change-log entry.
+
+version: "1"
+description: >
+  Phase 3 scale pilot before full S&P 500 collect. First 35 tickers match
+  config/validation_companies.yaml; 15 additional tickers broaden sector coverage.
+
+companies:
+  # --- Phase 1 validation set (35) — keep in sync with validation_companies.yaml ---
+  - ticker: AAPL
+    group: mega_cap_default
+  - ticker: MSFT
+    group: mega_cap_default
+  - ticker: NVDA
+    group: mega_cap_default
+  - ticker: AMZN
+    group: mega_cap_default
+  - ticker: GOOGL
+    group: mega_cap_default
+  - ticker: META
+    group: mega_cap_default
+  - ticker: AVGO
+    group: mega_cap_default
+  - ticker: TSLA
+    group: mega_cap_default
+  - ticker: BRK-B
+    group: mega_cap_default
+  - ticker: JPM
+    group: mega_cap_default
+  - ticker: UNH
+    group: large_cap_diversified
+  - ticker: JNJ
+    group: large_cap_diversified
+  - ticker: LLY
+    group: large_cap_diversified
+  - ticker: BAC
+    group: large_cap_diversified
+  - ticker: GS
+    group: large_cap_diversified
+  - ticker: XOM
+    group: large_cap_diversified
+  - ticker: CVX
+    group: large_cap_diversified
+  - ticker: WMT
+    group: large_cap_diversified
+  - ticker: PG
+    group: large_cap_diversified
+  - ticker: KO
+    group: large_cap_diversified
+  - ticker: PLTR
+    group: mid_cap_ai
+  - ticker: CRWD
+    group: mid_cap_ai
+  - ticker: SNOW
+    group: mid_cap_ai
+  - ticker: DDOG
+    group: mid_cap_ai
+  - ticker: ANET
+    group: mid_cap_ai
+  - ticker: ELAN
+    group: sec_fallback
+  - ticker: PATH
+    group: sec_fallback
+  - ticker: AI
+    group: sec_fallback
+  - ticker: SOUN
+    group: sec_fallback
+  - ticker: UPST
+    group: sec_fallback
+  - ticker: ORCL
+    group: large_cap_tech
+  - ticker: IBM
+    group: large_cap_tech
+  - ticker: INTC
+    group: large_cap_tech
+  - ticker: CSCO
+    group: large_cap_tech
+  - ticker: AMD
+    group: large_cap_tech
+
+  # --- Phase 3 pilot extension (15) ---
+  - ticker: COST
+    group: phase3_extension
+    sector: Consumer Staples
+    note: Warehouse club retail
+  - ticker: HD
+    group: phase3_extension
+    sector: Consumer Discretionary
+    note: Home improvement retail
+  - ticker: DIS
+    group: phase3_extension
+    sector: Communication Services
+    note: Media / streaming
+  - ticker: NFLX
+    group: phase3_extension
+    sector: Communication Services
+    note: Streaming / ML recommendations
+  - ticker: ADBE
+    group: phase3_extension
+    sector: Technology
+    note: Creative / generative AI tools
+  - ticker: CRM
+    group: phase3_extension
+    sector: Technology
+    note: Enterprise SaaS / Einstein AI
+  - ticker: V
+    group: phase3_extension
+    sector: Financials
+    note: Payments network
+  - ticker: MA
+    group: phase3_extension
+    sector: Financials
+    note: Payments network
+  - ticker: PEP
+    group: phase3_extension
+    sector: Consumer Staples
+    note: Beverages / snacks
+  - ticker: ABBV
+    group: phase3_extension
+    sector: Health Care
+    note: Pharma
+  - ticker: MRK
+    group: phase3_extension
+    sector: Health Care
+    note: Pharma / discovery
+  - ticker: TMO
+    group: phase3_extension
+    sector: Health Care
+    note: Life sciences tools
+  - ticker: LIN
+    group: phase3_extension
+    sector: Materials
+    note: Industrial gases
+  - ticker: RTX
+    group: phase3_extension
+    sector: Industrials
+    note: Aerospace / defense
+  - ticker: CAT
+    group: phase3_extension
+    sector: Industrials
+    note: Heavy equipment / autonomy

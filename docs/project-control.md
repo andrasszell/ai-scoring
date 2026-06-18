@@ -63,10 +63,10 @@ package level. Module layout preserves the standard's intent — see [`setup.md`
 |---|---|---|
 | 0–1 + Block F | Done | [`phase-1-development-plan.md`](phase-1-development-plan.md) |
 | 2.0–2.3 | Done | [`phase-2-implementation.md`](phase-2-implementation.md) |
-| 3 | Next | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
+| 3 | In progress (3A.1–3A.4 done; 3A.5 next) | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
 | 4 | Planned | [`data-collection-initial-plan.md`](data-collection-initial-plan.md) |
 
-- **Collectors:** 9 enabled (6 Phase 1 + 3 Phase 2). **188 tests.**
+- **Collectors:** 9 enabled (6 Phase 1 + 3 Phase 2). **208 tests.**
 - **Scoring:** `ai_adoption_score_v0_5` (nine pillars).
 - **Bulk universe:** S&P 500 via `load-companies` (Phase 3: full refresh at scale).
 - **On-demand:** any SEC-listed company by name — Phase 2.0 in [`phase-2-implementation.md`](phase-2-implementation.md).

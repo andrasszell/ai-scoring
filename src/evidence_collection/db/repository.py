@@ -8,7 +8,18 @@ from ..logging_config import get_logger
 from ..models import CollectorResult
 from ..validation import validate_evidence
 
+from ..status import CollectionStatus
+
 logger = get_logger("evidence_collection.repository")
+
+# Statuses eligible for ``ai-collect retry-failed`` (Phase 3A.4).
+RETRYABLE_STATUSES: frozenset[str] = frozenset(
+    {
+        CollectionStatus.RATE_LIMITED,
+        CollectionStatus.SOURCE_UNAVAILABLE,
+        CollectionStatus.API_LIMIT_REACHED,
+    }
+)
 
 # ---------------------------------------------------------------------------
 # Companies & aliases
@@ -393,6 +404,42 @@ def quality_report(conn) -> dict:
         "coverage": coverage,
         "outcome_breakdown": outcome_breakdown,
     }
+
+
+def latest_run_id(conn) -> int | None:
+    row = conn.execute("SELECT MAX(id) FROM collector_runs").fetchone()
+    if row is None or row[0] is None:
+        return None
+    return int(row[0])
+
+
+def failed_status_rows(
+    conn,
+    *,
+    tickers: list[str] | None = None,
+    collector_names: list[str] | None = None,
+    statuses: frozenset[str] | None = None,
+) -> list[dict]:
+    """Latest collector_status rows with retryable failure statuses (Phase 3A.4)."""
+    retry_statuses = statuses or RETRYABLE_STATUSES
+    if not retry_statuses:
+        return []
+    sql = """
+        SELECT ticker, source_type, collector_name, collector_version, status, message
+        FROM collector_status s
+        WHERE id IN (SELECT MAX(id) FROM collector_status GROUP BY ticker, source_type)
+          AND status IN ({status_placeholders})
+    """.format(status_placeholders=",".join("?" for _ in retry_statuses))
+    params: list = list(retry_statuses)
+    if tickers:
+        norm = [t.upper().replace(".", "-") for t in tickers]
+        sql += f" AND ticker IN ({','.join('?' for _ in norm)})"
+        params.extend(norm)
+    if collector_names:
+        sql += f" AND collector_name IN ({','.join('?' for _ in collector_names)})"
+        params.extend(collector_names)
+    sql += " ORDER BY ticker, source_type"
+    return [dict(r) for r in conn.execute(sql, params)]
 
 
 def status_summary(conn, tickers: list[str] | None = None) -> list[dict]:

@@ -15,7 +15,7 @@ guides live in the phase documents below — not duplicated here.
 | Phase 1 | Complete | [`phase-1-development-plan.md`](phase-1-development-plan.md) |
 | Block F (outcomes) | Complete | [`data-sources.md` § outcomes](data-sources.md#collection-outcome-semantics) |
 | Phase 2 | Complete | [`phase-2-implementation.md`](phase-2-implementation.md) |
-| Phase 3 | Planned | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
+| Phase 3 | In progress | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
 | Phase 4 | Planned | [`data-collection-initial-plan.md` § Phase 4](data-collection-initial-plan.md) |
 
 **Required docs (§13):** [`project-control.md`](project-control.md) · [`data-sources.md`](data-sources.md) · [`scoring-methodology.md`](scoring-methodology.md) · [`change-log.md`](change-log.md) · [`setup.md`](setup.md)
@@ -29,8 +29,8 @@ guides live in the phase documents below — not duplicated here.
 - [x] **Audit remediation:** validation gate (§22), dedup (§13), `validate` + `reprocess`, versioned scores.
 - [x] **Phase 1 — Core collectors + validation sample:** Blocks A–D. **35 companies, 991 evidence rows, 0 validate violations (2026-06-16).**
 - [x] **Block F — Collection outcome semantics:** `reason:source_empty` / `filtered_to_zero` / failure vocabulary; scoring guardrails (`v0_2+`). **150 tests.**
-- [x] **Phase 2 — On-demand scoring + new sources:** 2.0 ad-hoc scoring, 2.1 GitHub, 2.2 press, 2.3 product docs; `ai_adoption_score_v0_5`. **188 tests (2026-06-16).**
-- [ ] **Phase 3 — Scale:** full S&P 500, API-cost tracking, incremental refresh, freshness, retry queue → [`phase-3-development-plan.md`](phase-3-development-plan.md)
+- [x] **Phase 2 — On-demand scoring + new sources:** 2.0 ad-hoc scoring, 2.1 GitHub, 2.2 press, 2.3 product docs; `ai_adoption_score_v0_5`. **208 tests (2026-06-16).**
+- [ ] **Phase 3 — Scale (in progress):** 3A.1–3A.4 done; pilot export + retries; **3A.5 stale refresh next** → [`phase-3-development-plan.md`](phase-3-development-plan.md)
 - [ ] **Phase 4 — Production handoff:** versioned snapshots, field-definition docs, coverage reports.
 
 ---

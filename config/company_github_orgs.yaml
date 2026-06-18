@@ -50,5 +50,19 @@ PATH:
 AI:
   - c3ai
 
+# Phase 3 pilot extension
+NFLX:
+  - Netflix
+ADBE:
+  - adobe
+  - Adobe-Research
+CRM:
+  - salesforce
+  - SalesforceAIResearch
+CSCO:
+  - CiscoDevNet
+AVGO:
+  - broadcom
+
 # Block D — sector spread (add orgs when known)
 ELAN: []

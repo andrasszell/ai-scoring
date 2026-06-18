@@ -16,6 +16,7 @@ from .outcomes import parse_outcome_detail, parse_outcome_reason
 from .runner import run_collection
 from .universe import (
     enrich_companies,
+    ensure_pilot_companies,
     ensure_validation_companies,
     format_ambiguous_message,
     load_universe,
@@ -24,6 +25,9 @@ from .universe import (
     upsert_tickers_from_sec,
     github_orgs_for_ticker,
 )
+from .universe.verify import DEFAULT_SPOT_CHECK, spot_check_tickers, universe_stats
+from .costs import format_cost_report, summarize_run_costs
+from .retry import build_retry_targets, format_retry_plan, retry_failed_collection
 
 logger = get_logger("evidence_collection.cli")
 
@@ -57,7 +61,13 @@ def cmd_load_companies(args) -> None:
     n, aliases = load_universe(conn, limit=args.limit)
     if getattr(args, "validation_set", False):
         companies, tickers = ensure_validation_companies(conn)
+        enrich_companies(conn, companies)
         print(f"Validation set: {len(tickers)} tickers ensured in database "
+              f"({len(companies)} resolved).")
+    if getattr(args, "pilot_set", False):
+        companies, tickers = ensure_pilot_companies(conn)
+        enrich_companies(conn, companies)
+        print(f"Phase 3 pilot set: {len(tickers)} tickers ensured in database "
               f"({len(companies)} resolved).")
     conn.close()
     print(f"Loaded {n} companies into {settings.db_path} ({aliases} aliases from config)")
@@ -65,6 +75,10 @@ def cmd_load_companies(args) -> None:
 
 def _select_companies(conn, args) -> tuple[list[dict], list[str] | None]:
     """Resolve the company set for a collect run. Returns (companies, requested)."""
+    if getattr(args, "pilot_set", False):
+        companies, requested = ensure_pilot_companies(conn)
+        print(f"Using Phase 3 pilot set ({len(requested)} tickers).")
+        return companies, requested
     if getattr(args, "validation_set", False):
         companies, requested = ensure_validation_companies(conn)
         print(f"Using Phase 1 validation set ({len(requested)} tickers).")
@@ -83,11 +97,16 @@ def _select_companies(conn, args) -> tuple[list[dict], list[str] | None]:
 
 
 def cmd_collect(args) -> None:
-    if getattr(args, "validation_set", False) and (
-        getattr(args, "ticker", None) or getattr(args, "all", False) or getattr(args, "limit", None)
-    ):
+    exclusive = (
+        getattr(args, "validation_set", False),
+        getattr(args, "pilot_set", False),
+        bool(getattr(args, "ticker", None)),
+        getattr(args, "all", False),
+        bool(getattr(args, "limit", None)),
+    )
+    if sum(exclusive) > 1:
         raise SystemExit(
-            "Use --validation-set alone, or use --ticker / --all / --limit — not both."
+            "Use exactly one scope: --pilot-set, --validation-set, --ticker, --all, or --limit."
         )
     conn = _conn()
     if repo.count_companies(conn) == 0:
@@ -117,9 +136,12 @@ def cmd_collect(args) -> None:
         args={"tickers": requested, "all": args.all, "sources": args.source or SOURCE_KEYS},
     )
     conn.close()
+    cost_line = ""
+    if totals.get("estimated_api_cost_usd") is not None:
+        cost_line = f", ~${totals['estimated_api_cost_usd']:.4f} est. API cost"
     print(f"\nRun #{totals['run_id']}: {totals['evidence']} evidence items, "
           f"{totals['documents']} documents, {totals['ok']} ok / {totals['failed']} failed "
-          f"in {totals['runtime_seconds']}s")
+          f"in {totals['runtime_seconds']}s{cost_line}")
 
 
 def cmd_analyze(args) -> None:
@@ -316,17 +338,116 @@ def cmd_status(args) -> None:
     if not rows:
         print("No collection runs recorded yet. Run: ai-collect collect")
         return
-    print(
+    header = (
         f"{'TICKER':<8} {'SOURCE':<22} {'STATUS':<18} {'EVID':>5} {'DOCS':>5} "
-        f"{'HITS':>5} {'REASON':<18} DETAIL"
+        f"{'HITS':>5} {'CALLS':>6} {'REASON':<18} DETAIL"
     )
+    print(header)
     for r in rows:
         reason = parse_outcome_reason(r.get("message")) or ""
         detail = parse_outcome_detail(r.get("message")) or ""
         print(
             f"{r['ticker']:<8} {r['source_type']:<22} {r['status']:<18} "
             f"{r['evidence_count']:>5} {r['documents_count']:>5} "
-            f"{(r.get('source_hits') or 0):>5} {reason:<18} {detail}"
+            f"{(r.get('source_hits') or 0):>5} {(r.get('api_calls') or 0):>6} "
+            f"{reason:<18} {detail}"
+        )
+
+
+def cmd_retry_failed(args) -> None:
+    conn = _conn()
+    tickers = _normalize(args.ticker)
+    collector_names = None
+    if args.source:
+        from .collectors import REGISTRY
+
+        collector_names = [REGISTRY[s].name for s in args.source]
+    rows = repo.failed_status_rows(conn, tickers=tickers, collector_names=collector_names)
+    if args.dry_run:
+        conn.close()
+        print(format_retry_plan(rows))
+        print(f"\n{len(rows)} pair(s) would be retried.")
+        return
+    targets = build_retry_targets(conn, rows, source_keys=args.source)
+    conn.close()
+    if not rows:
+        print("No retryable failures (latest status per ticker×source).")
+        return
+    if not targets:
+        print("No matching companies/collectors found for failed rows.")
+        return
+    conn = _conn()
+    from .runner import run_targeted_collection
+
+    print(f"Retrying {len(targets)} failed ticker×source pair(s)...")
+    totals = run_targeted_collection(
+        conn,
+        targets,
+        command="retry-failed",
+        args={"tickers": tickers, "sources": args.source, "pairs": len(targets)},
+    )
+    conn.close()
+    cost_line = ""
+    if totals.get("estimated_api_cost_usd") is not None:
+        cost_line = f", ~${totals['estimated_api_cost_usd']:.4f} est. API cost"
+    print(
+        f"\nRun #{totals['run_id']}: {totals['evidence']} evidence items, "
+        f"{totals['documents']} documents, {totals['ok']} ok / {totals['failed']} failed "
+        f"in {totals['runtime_seconds']}s{cost_line}"
+    )
+
+
+def cmd_verify_universe(args) -> None:
+    conn = _conn()
+    if repo.count_companies(conn) == 0:
+        print("Company universe is empty; loading S&P 500 first...")
+        load_universe(conn)
+    stats = universe_stats(conn)
+    spot = spot_check_tickers(conn, DEFAULT_SPOT_CHECK)
+    conn.close()
+
+    print("Universe verification (Phase 3A.1)")
+    print(f"  Companies in DB:        {stats['total_companies']}")
+    print(f"  With CIK:               {stats['with_cik']}")
+    print(f"  With website_domain:    {stats['with_domain_db']} (config seeds: {stats['domains_configured']})")
+    print(f"  GitHub orgs configured: {stats['github_orgs_configured']} tickers")
+    print(f"  Pilot set ({stats['pilot_ticker_count']} tickers):")
+    print(f"    domain in DB:         {stats['pilot_with_domain_db']}")
+    print(f"    domain in config:     {stats['pilot_with_domain_config']}")
+    print(f"    GitHub orgs:          {stats['pilot_with_github_orgs']}")
+    ok_cik = stats["total_companies"] >= 490 and stats["with_cik"] == stats["total_companies"]
+    print(f"  CIK gate (>=490, all):  {'PASS' if ok_cik else 'REVIEW'}")
+    print()
+    print("Spot-check (10 tickers):")
+    for row in spot:
+        if not row.get("found"):
+            print(f"  {row['ticker']}: NOT IN DATABASE")
+            continue
+        domain = row.get("website_domain") or "n/a"
+        print(
+            f"  {row['ticker']}: CIK={row.get('cik') or 'n/a'}, "
+            f"domain={domain}, sector={row.get('sector') or 'n/a'}"
+        )
+
+
+def cmd_costs(args) -> None:
+    conn = _conn()
+    run_id = args.run_id or repo.latest_run_id(conn)
+    if run_id is None:
+        conn.close()
+        raise SystemExit("No collection runs recorded yet. Run: ai-collect collect")
+    summary = summarize_run_costs(conn, int(run_id))
+    company_count = repo.count_companies(conn)
+    conn.close()
+    print(format_cost_report(summary))
+    if args.project_full_sp500 and summary["estimated_usd"] > 0:
+        pilot = 50
+        per_company = summary["estimated_usd"] / pilot
+        projected = per_company * company_count
+        print()
+        print(
+            f"Projection (linear): ${per_company:.4f}/company × {company_count} companies "
+            f"≈ ${projected:.2f} per full run (pilot basis: {pilot} companies)"
         )
 
 
@@ -390,6 +511,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="After S&P load, ensure all tickers in config/validation_companies.yaml exist (SEC fallback).",
     )
+    s.add_argument(
+        "--pilot-set",
+        action="store_true",
+        help="After S&P load, ensure all tickers in config/phase3_pilot_companies.yaml exist.",
+    )
     s.set_defaults(func=cmd_load_companies)
 
     s = sub.add_parser("collect", help="Collect evidence for companies.")
@@ -400,6 +526,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--validation-set",
         action="store_true",
         help="Collect all tickers from config/validation_companies.yaml (Phase 1 sample).",
+    )
+    s.add_argument(
+        "--pilot-set",
+        action="store_true",
+        help="Collect all tickers from config/phase3_pilot_companies.yaml (Phase 3 pilot, 50).",
     )
     _add_source_flag(s)
     s.set_defaults(func=cmd_collect)
@@ -450,6 +581,28 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("status", help="Show the latest collection status per company/source.")
     s.add_argument("--ticker", nargs="*")
     s.set_defaults(func=cmd_status)
+
+    s = sub.add_parser("retry-failed", help="Re-run collectors for latest rate_limited/source_unavailable pairs.")
+    s.add_argument("--ticker", nargs="*", help="Limit retry to these tickers.")
+    s.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="List failed pairs without collecting.",
+    )
+    _add_source_flag(s)
+    s.set_defaults(func=cmd_retry_failed)
+
+    s = sub.add_parser("verify-universe", help="Phase 3A.1: report universe coverage and spot-check tickers.")
+    s.set_defaults(func=cmd_verify_universe)
+
+    s = sub.add_parser("costs", help="Estimated API cost for a collection run.")
+    s.add_argument("--run-id", type=int, default=None, help="Collector run id (default: latest).")
+    s.add_argument(
+        "--project-full-sp500",
+        action="store_true",
+        help="Linear projection to full loaded universe from 50-ticker pilot basis.",
+    )
+    s.set_defaults(func=cmd_costs)
 
     s = sub.add_parser("show-platforms", help="List platform registry entries and API key status.")
     s.add_argument("--phase", type=int, default=None, help="Filter by phase (default: 1, or all phases with --all).")
