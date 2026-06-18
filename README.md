@@ -78,10 +78,14 @@ ai-collect validate-company MSFT            # inspect identity, aliases, collect
 ai-collect collect --ticker MSFT NVDA       # specific companies (all sources)
 ai-collect collect --validation-set         # Phase 1 sample (35 tickers from config)
 ai-collect collect --pilot-set              # Phase 3 pilot (50 tickers from config)
+ai-collect collect --stale-days 30          # skip fresh ticker×source pairs (3A.5)
+ai-collect collect --all --stale-days 30 --force  # full refresh ignoring freshness
 ai-collect verify-universe                  # Phase 3A.1 coverage report
 ai-collect retry-failed --dry-run           # list failed pairs (Phase 3A.4)
 ai-collect retry-failed                     # retry rate_limited / source_unavailable
 ai-collect costs --project-full-sp500       # API cost estimate from latest run
+ai-collect freshness --pilot-set            # corpus age + per-source SLA report (3A.6)
+ai-collect freshness --stale-only --fail-on-stale  # cron-friendly exit code
 ai-collect collect --source sec research github press product_docs    # limit sources
 ai-collect reprocess --source product_docs --ticker MSFT              # offline re-extract
 ai-collect collect --all                    # every loaded company

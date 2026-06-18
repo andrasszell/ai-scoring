@@ -442,6 +442,25 @@ def failed_status_rows(
     return [dict(r) for r in conn.execute(sql, params)]
 
 
+def latest_status_index(
+    conn,
+    tickers: list[str] | None = None,
+) -> dict[tuple[str, str], dict]:
+    """Latest status rows keyed by (ticker, collector_name)."""
+    sql = """
+        SELECT ticker, source_type, collector_name, status, created_at, message
+        FROM collector_status s
+        WHERE id IN (SELECT MAX(id) FROM collector_status GROUP BY ticker, source_type)
+    """
+    params: list = []
+    if tickers:
+        norm = [t.upper().replace(".", "-") for t in tickers]
+        sql += f" AND ticker IN ({','.join('?' for _ in norm)})"
+        params = norm
+    rows = conn.execute(sql, params).fetchall()
+    return {(r["ticker"], r["collector_name"]): dict(r) for r in rows}
+
+
 def status_summary(conn, tickers: list[str] | None = None) -> list[dict]:
     """Latest status per (ticker, source_type)."""
     sql = """

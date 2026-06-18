@@ -2,12 +2,35 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-18 — Phase 3A.7: full S&P 500 production runbook
+
+- **`scripts/phase3_sp500_run.sh`** — load, collect `--all`, validate, costs, freshness,
+  optional `retry-failed`, export (`PHASE=collect|post` for resume).
+- QA: [`qa/phase-3-sp500-run.md`](qa/phase-3-sp500-run.md).
+- Collect started 2026-06-18 (`data/exports/phase3_sp500_20260618/`).
+
+## 2026-06-18 — Phase 3A.6: freshness monitoring (`ai-collect freshness`)
+
+- **`ai-collect freshness`** — per-ticker evidence age, per-source last collection vs SLA.
+- **`src/evidence_collection/freshness_report.py`** — report builder + JSON export.
+- Flags: `--stale-days`, `--stale-only`, `--json`, `--output`, `--fail-on-stale` (cron).
+- SLA targets from [`config/source_freshness_ttl.yaml`](../config/source_freshness_ttl.yaml).
+- **230 tests.**
+
+## 2026-06-18 — Phase 3A.5: incremental refresh (`--stale-days`)
+
+- **`ai-collect collect --stale-days N`** and **`--since YYYY-MM-DD`** skip fresh
+  ticker×source pairs; **`--force`** overrides.
+- **`config/source_freshness_ttl.yaml`** — per-`source_type` TTL defaults.
+- **`src/evidence_collection/freshness.py`** — policy + planning; runner records `skipped`.
+- **221 tests.**
+
 ## 2026-06-16 — Phase 3A pilot closed (3A.1–3A.4)
 
 - Pilot collect 50/50 tickers; validate 0 violations; export `phase3_pilot_20260616/`.
 - Research 50/50 after Semantic Scholar key fix; `retry-failed` for SerpAPI/product_docs.
 - Prerequisites and test counts synced (208). QA: [`qa/phase-3-pilot-run.md`](qa/phase-3-pilot-run.md).
-- **Next:** 3A.5 `--stale-days` incremental refresh.
+- **Next:** 3A.6 `ai-collect freshness` report.
 
 ## 2026-06-16 — Phase 3A.4: retry-failed command
 

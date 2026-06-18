@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from .collectors import SOURCE_KEYS, get_collectors
@@ -14,6 +15,7 @@ from .registry_gate import get_platform_registry, reset_registry_cache
 from .platforms import Platform, runtime_key_status
 from .outcomes import parse_outcome_detail, parse_outcome_reason
 from .runner import run_collection
+from .freshness import policy_from_collect_args
 from .universe import (
     enrich_companies,
     ensure_pilot_companies,
@@ -28,6 +30,7 @@ from .universe import (
 from .universe.verify import DEFAULT_SPOT_CHECK, spot_check_tickers, universe_stats
 from .costs import format_cost_report, summarize_run_costs
 from .retry import build_retry_targets, format_retry_plan, retry_failed_collection
+from .freshness_report import build_freshness_report, format_freshness_report, write_freshness_report
 
 logger = get_logger("evidence_collection.cli")
 
@@ -130,18 +133,34 @@ def cmd_collect(args) -> None:
 
     companies = enrich_companies(conn, companies)
     collectors = get_collectors(args.source)
+    freshness = policy_from_collect_args(args)
+    if freshness is not None and freshness.enabled:
+        scope = f"--stale-days {args.stale_days}" if args.stale_days is not None else ""
+        if args.since:
+            scope = f"{scope} --since {args.since}".strip()
+        print(f"Incremental refresh ({scope}): skipping fresh ticker×source pairs.")
     totals = run_collection(
         conn, companies, collectors,
         command="collect",
-        args={"tickers": requested, "all": args.all, "sources": args.source or SOURCE_KEYS},
+        args={
+            "tickers": requested,
+            "all": args.all,
+            "sources": args.source or SOURCE_KEYS,
+            "stale_days": getattr(args, "stale_days", None),
+            "since": getattr(args, "since", None),
+            "force": getattr(args, "force", False),
+        },
+        freshness_policy=freshness,
     )
     conn.close()
     cost_line = ""
     if totals.get("estimated_api_cost_usd") is not None:
         cost_line = f", ~${totals['estimated_api_cost_usd']:.4f} est. API cost"
+    skipped = totals.get("skipped") or 0
+    skip_part = f", {skipped} skipped" if skipped else ""
     print(f"\nRun #{totals['run_id']}: {totals['evidence']} evidence items, "
-          f"{totals['documents']} documents, {totals['ok']} ok / {totals['failed']} failed "
-          f"in {totals['runtime_seconds']}s{cost_line}")
+          f"{totals['documents']} documents, {totals['ok']} ok / {totals['failed']} failed"
+          f"{skip_part} in {totals['runtime_seconds']}s{cost_line}")
 
 
 def cmd_analyze(args) -> None:
@@ -430,6 +449,66 @@ def cmd_verify_universe(args) -> None:
         )
 
 
+def _resolve_freshness_scope(conn, args) -> list[dict]:
+    """Resolve company list for freshness / status-style commands."""
+    exclusive = (
+        getattr(args, "validation_set", False),
+        getattr(args, "pilot_set", False),
+        bool(getattr(args, "ticker", None)),
+        getattr(args, "all", False),
+    )
+    if sum(exclusive) > 1:
+        raise SystemExit(
+            "Use exactly one scope: --pilot-set, --validation-set, --ticker, or --all."
+        )
+    if getattr(args, "pilot_set", False):
+        companies, _ = ensure_pilot_companies(conn)
+        return companies
+    if getattr(args, "validation_set", False):
+        companies, _ = ensure_validation_companies(conn)
+        return companies
+    if getattr(args, "ticker", None):
+        return repo.get_companies(conn, _normalize(args.ticker))
+    if getattr(args, "all", False) or repo.count_companies(conn) > 0:
+        return repo.get_companies(conn)
+    return []
+
+
+def cmd_freshness(args) -> None:
+    conn = _conn()
+    if repo.count_companies(conn) == 0:
+        conn.close()
+        raise SystemExit("Company universe is empty. Run: ai-collect load-companies")
+    companies = _resolve_freshness_scope(conn, args)
+    if not companies:
+        conn.close()
+        raise SystemExit("No matching companies found.")
+    report = build_freshness_report(
+        conn,
+        companies,
+        stale_days=getattr(args, "stale_days", None),
+    )
+    conn.close()
+
+    if getattr(args, "json", False):
+        payload = json.dumps(report, indent=2)
+        if args.output:
+            write_freshness_report(Path(args.output), report)
+            print(f"Wrote {args.output}")
+        else:
+            print(payload)
+    else:
+        print(format_freshness_report(report, stale_only=getattr(args, "stale_only", False)))
+        if args.output:
+            write_freshness_report(Path(args.output), report)
+            print(f"\nJSON export: {args.output}")
+
+    if getattr(args, "fail_on_stale", False):
+        summary = report["summary"]
+        if summary["stale_companies"] or summary["stale_sources"]:
+            raise SystemExit(1)
+
+
 def cmd_costs(args) -> None:
     conn = _conn()
     run_id = args.run_id or repo.latest_run_id(conn)
@@ -532,6 +611,24 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Collect all tickers from config/phase3_pilot_companies.yaml (Phase 3 pilot, 50).",
     )
+    s.add_argument(
+        "--stale-days",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Skip sources collected within N days (uses config/source_freshness_ttl.yaml per source_type).",
+    )
+    s.add_argument(
+        "--since",
+        default=None,
+        metavar="YYYY-MM-DD",
+        help="Skip sources last collected on or after this date.",
+    )
+    s.add_argument(
+        "--force",
+        action="store_true",
+        help="Collect all requested sources ignoring freshness (--stale-days / --since).",
+    )
     _add_source_flag(s)
     s.set_defaults(func=cmd_collect)
 
@@ -603,6 +700,40 @@ def build_parser() -> argparse.ArgumentParser:
         help="Linear projection to full loaded universe from 50-ticker pilot basis.",
     )
     s.set_defaults(func=cmd_costs)
+
+    s = sub.add_parser("freshness", help="Corpus age and per-source collection freshness (Phase 3A.6).")
+    s.add_argument("--ticker", nargs="*", help="Limit to these tickers.")
+    s.add_argument(
+        "--validation-set",
+        action="store_true",
+        help="Report tickers from config/validation_companies.yaml.",
+    )
+    s.add_argument(
+        "--pilot-set",
+        action="store_true",
+        help="Report tickers from config/phase3_pilot_companies.yaml.",
+    )
+    s.add_argument("--all", action="store_true", help="Report all loaded companies (default when no --ticker).")
+    s.add_argument(
+        "--stale-days",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Flag companies with no evidence in N days (default: config default_stale_days).",
+    )
+    s.add_argument(
+        "--stale-only",
+        action="store_true",
+        help="Show only stale companies and sources in text output.",
+    )
+    s.add_argument("--json", action="store_true", help="Print JSON report (machine-readable).")
+    s.add_argument("--output", default=None, help="Write JSON report to this path.")
+    s.add_argument(
+        "--fail-on-stale",
+        action="store_true",
+        help="Exit 1 when any company or source is stale (for cron alerts).",
+    )
+    s.set_defaults(func=cmd_freshness)
 
     s = sub.add_parser("show-platforms", help="List platform registry entries and API key status.")
     s.add_argument("--phase", type=int, default=None, help="Filter by phase (default: 1, or all phases with --all).")

@@ -41,6 +41,16 @@ pytest tests/unit            # fast unit tests
 pytest tests/integration     # end-to-end fixture + run orchestration
 ```
 
+## Phase 3 full S&P 500 collect (3A.7)
+
+One-shot production run (several hours, paid API usage):
+
+```bash
+bash scripts/phase3_sp500_run.sh
+```
+
+QA checklist and monitoring: [`qa/phase-3-sp500-run.md`](qa/phase-3-sp500-run.md).
+
 ## Environment overrides (defaults shown)
 
 ```bash

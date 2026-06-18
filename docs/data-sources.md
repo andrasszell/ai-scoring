@@ -268,7 +268,32 @@ ai-collect retry-failed --source product_docs  # limit to one collector
 | FMP / PatentsView | Plan-dependent; PatentsView Search API may be unavailable (migrate to USPTO ODP) |
 
 After a pilot or full run, use `ai-collect retry-failed` before re-collecting the
-entire universe. For scheduled refresh, see Phase 3A.5 (`--stale-days`).
+entire universe.
+
+**Incremental refresh (3A.5):**
+
+```bash
+ai-collect collect --pilot-set --stale-days 30   # skip fresh pairs
+ai-collect collect --ticker MSFT --since 2026-06-01
+ai-collect collect --all --stale-days 30 --force # ignore freshness
+```
+
+TTL defaults: [`config/source_freshness_ttl.yaml`](../config/source_freshness_ttl.yaml).
+Fresh pairs record `skipped` status with `skipped:last=…` message.
+
+**Freshness monitoring (3A.6):**
+
+```bash
+ai-collect freshness --pilot-set              # summary + per-source SLA table
+ai-collect freshness --stale-only             # only stale companies / sources
+ai-collect freshness --stale-days 30          # company stale threshold (default: config)
+ai-collect freshness --json --output data/exports/freshness.json
+ai-collect freshness --fail-on-stale          # exit 1 for cron alerts
+```
+
+SLA targets per `source_type` (e.g. SEC 90d, jobs 14d) come from
+`config/source_freshness_ttl.yaml`. A source is stale when last collection is older
+than its SLA, never collected, or last run failed.
 
 ---
 

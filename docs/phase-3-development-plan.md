@@ -177,8 +177,15 @@ ai-collect export-all --output-dir data/exports/phase3_pilot_YYYYMMDD
 
 **Done when:**
 
-- [ ] Second collect on same tickers skips fresh sources (or only runs stale).
-- [ ] Tests with fixture timestamps.
+- [x] Second collect on same tickers skips fresh sources (or only runs stale).
+- [x] Tests with fixture timestamps.
+
+**Verify:**
+
+```bash
+ai-collect collect --pilot-set --stale-days 30 --source sec
+ai-collect status --ticker MSFT   # fresh sec row shows skipped on re-run
+```
 
 ---
 
@@ -193,14 +200,24 @@ ai-collect export-all --output-dir data/exports/phase3_pilot_YYYYMMDD
 
 **Done when:**
 
-- [ ] Command lists tickers with no evidence in N days.
-- [ ] Documented SLA targets (e.g. SEC quarterly, jobs monthly).
+- [x] Command lists tickers with no evidence in N days.
+- [x] Documented SLA targets (e.g. SEC quarterly, jobs monthly).
+
+**Verify:**
+
+```bash
+ai-collect freshness --pilot-set
+ai-collect freshness --pilot-set --stale-only --fail-on-stale
+ai-collect freshness --json --output data/exports/freshness.json
+```
 
 ---
 
 ### Step 3A.7 — Full S&P 500 production collect
 
 **Goal:** One documented full-universe run.
+
+**Runbook:** [`scripts/phase3_sp500_run.sh`](../scripts/phase3_sp500_run.sh) · QA: [`qa/phase-3-sp500-run.md`](qa/phase-3-sp500-run.md)
 
 **Done when:**
 
@@ -210,6 +227,8 @@ ai-collect export-all --output-dir data/exports/phase3_pilot_YYYYMMDD
 - [ ] Export + cost report archived.
 
 **Deliverable:** `data/exports/phase3_sp500_YYYYMMDD/`
+
+**Status (2026-06-18):** collect `--all` started; 50/509 tickers had prior pilot data.
 
 ---
 
@@ -286,9 +305,9 @@ ai-collect verify-universe
 ai-collect collect --pilot-set
 ai-collect costs --project-full-sp500
 ai-collect collect --all
-ai-collect collect --stale-days 30      # planned 3A.5
+ai-collect collect --stale-days 30      # 3A.5 incremental refresh
 ai-collect retry-failed                 # 3A.4 — retry rate_limited / source_unavailable
-ai-collect freshness                    # planned 3A.6
+ai-collect freshness                    # 3A.6 corpus age + SLA report
 
 # Premium (as implemented in 3B)
 ai-collect show-platforms --phase 3

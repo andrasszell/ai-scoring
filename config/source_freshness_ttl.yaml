@@ -1,0 +1,19 @@
+# Default refresh TTL (days) per source_type for incremental collect (Phase 3A.5)
+# and freshness SLA monitoring (Phase 3A.6).
+# Used when `ai-collect collect --stale-days N` is set; per-source value wins when larger
+# than N. Override path: SOURCE_FRESHNESS_TTL_YAML env.
+
+version: "1"
+
+default_stale_days: 30
+
+source_types:
+  sec_annual_filing: 90
+  earnings_call_transcript: 30
+  web_search_product: 30
+  job_posting: 14
+  patent: 90
+  research_paper: 60
+  github_repository: 30
+  press_release: 30
+  product_documentation: 30
