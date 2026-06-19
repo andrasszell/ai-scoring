@@ -2,6 +2,12 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-19 — Phase 4.2: source coverage report (`ai-collect coverage`)
+
+- **`ai-collect coverage`** — per-`source_type` with/without evidence; JSON export.
+- Snapshot `manifest.json` includes `source_coverage` summary.
+- **236 tests.**
+
 ## 2026-06-19 — Phase 4.1: versioned snapshots (`ai-collect snapshot`)
 
 - **`ai-collect snapshot`** — export bundle + `manifest.json` (schema, validate, coverage).

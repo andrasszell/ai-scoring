@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .db.migrations import current_version
 from .db import repository as repo
+from .coverage_report import build_coverage_report
 from .exporters import export_evidence_jsonl, export_table_csv
 
 
@@ -22,6 +23,7 @@ def create_snapshot(
     *,
     tag: str | None = None,
     tickers: list[str] | None = None,
+    companies: list[dict] | None = None,
 ) -> dict:
     """Export a versioned evidence bundle with manifest for Team 2 handoff."""
     out = Path(output_dir)
@@ -38,6 +40,8 @@ def create_snapshot(
     report = repo.quality_report(conn)
     run_id = repo.latest_run_id(conn)
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    company_rows = companies if companies is not None else repo.get_companies(conn, tickers)
+    source_coverage = build_coverage_report(conn, company_rows)
 
     manifest = {
         "snapshot_version": "1",
@@ -52,6 +56,7 @@ def create_snapshot(
             "violations": report["violations"],
         },
         "coverage": report["coverage"],
+        "source_coverage": source_coverage["summary"],
         "field_definitions": "docs/evidence-field-definitions.md",
     }
     manifest_path = out / "manifest.json"

@@ -31,7 +31,7 @@ guides live in the phase documents below — not duplicated here.
 - [x] **Block F — Collection outcome semantics:** `reason:source_empty` / `filtered_to_zero` / failure vocabulary; scoring guardrails (`v0_2+`). **150 tests.**
 - [x] **Phase 2 — On-demand scoring + new sources:** 2.0 ad-hoc scoring, 2.1 GitHub, 2.2 press, 2.3 product docs; `ai_adoption_score_v0_5`. **208 tests (2026-06-16).**
 - [ ] **Phase 3 — Scale (in progress):** 3A complete; 3B.1 done — **3B.2 blocked** (vendor sign-off).
-- [ ] **Phase 4 — Production handoff (started):** 4.1 snapshots + field definitions → [`phase-4-development-plan.md`](phase-4-development-plan.md)
+- [ ] **Phase 4 — Production handoff (in progress):** 4.1–4.2 done; **4.3 Parquet optional** → [`phase-4-development-plan.md`](phase-4-development-plan.md)
 
 ---
 

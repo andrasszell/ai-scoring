@@ -37,11 +37,19 @@ ai-collect snapshot --tag phase3_sp500 --output-dir data/exports/snapshots/corpu
 
 **Deliverables:**
 
-- Extend snapshot manifest or add `ai-collect coverage` with per-pillar gaps.
+- `ai-collect coverage` — per-`source_type` evidence gaps + ticker lists.
+- Snapshot `manifest.json` includes `source_coverage` summary.
 
 **Done when:**
 
-- [ ] Report lists tickers missing each `source_type` at S&P scale.
+- [x] Report lists tickers missing each `source_type` at S&P scale.
+
+**Verify:**
+
+```bash
+ai-collect coverage --missing-only
+ai-collect coverage --json --output data/exports/coverage.json
+```
 
 ---
 
@@ -67,5 +75,6 @@ ai-collect snapshot --tag phase3_sp500 --output-dir data/exports/snapshots/corpu
 ```bash
 ai-collect snapshot                              # default: data/exports/snapshots/corpus_YYYYMMDD
 ai-collect snapshot --tag phase3_sp500 -o data/exports/snapshots/corpus_phase3_sp500
+ai-collect coverage --missing-only
 ai-collect validate
 ```

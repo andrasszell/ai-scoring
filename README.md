@@ -86,6 +86,7 @@ ai-collect retry-failed                     # retry rate_limited / source_unavai
 ai-collect costs --project-full-sp500       # API cost estimate from latest run
 ai-collect freshness --pilot-set            # corpus age + per-source SLA report (3A.6)
 ai-collect freshness --stale-only --fail-on-stale  # cron-friendly exit code
+ai-collect coverage --missing-only               # per-pillar evidence gaps (4.2)
 ai-collect collect --source sec research github press product_docs    # limit sources
 ai-collect reprocess --source product_docs --ticker MSFT              # offline re-extract
 ai-collect collect --all                    # every loaded company

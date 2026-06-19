@@ -31,6 +31,7 @@ from .universe.verify import DEFAULT_SPOT_CHECK, spot_check_tickers, universe_st
 from .costs import format_cost_report, summarize_run_costs
 from .retry import build_retry_targets, format_retry_plan, retry_failed_collection
 from .freshness_report import build_freshness_report, format_freshness_report, write_freshness_report
+from .coverage_report import build_coverage_report, format_coverage_report, write_coverage_report
 from .snapshot import create_snapshot, default_snapshot_dir
 
 logger = get_logger("evidence_collection.cli")
@@ -510,12 +511,38 @@ def cmd_freshness(args) -> None:
             raise SystemExit(1)
 
 
+def cmd_coverage(args) -> None:
+    conn = _conn()
+    if repo.count_companies(conn) == 0:
+        conn.close()
+        raise SystemExit("Company universe is empty. Run: ai-collect load-companies")
+    companies = _resolve_freshness_scope(conn, args)
+    if not companies:
+        conn.close()
+        raise SystemExit("No matching companies found.")
+    report = build_coverage_report(conn, companies)
+    conn.close()
+
+    if getattr(args, "json", False):
+        if args.output:
+            write_coverage_report(Path(args.output), report)
+            print(f"Wrote {args.output}")
+        else:
+            print(json.dumps(report, indent=2))
+    else:
+        print(format_coverage_report(report, missing_only=getattr(args, "missing_only", False)))
+        if args.output:
+            write_coverage_report(Path(args.output), report)
+            print(f"\nJSON export: {args.output}")
+
+
 def cmd_snapshot(args) -> None:
     conn = _conn()
     tag = getattr(args, "tag", None)
     out = Path(args.output_dir) if args.output_dir else default_snapshot_dir(tag)
     tickers = _normalize(args.ticker)
-    result = create_snapshot(conn, out, tag=tag, tickers=tickers)
+    companies = repo.get_companies(conn, tickers) if tickers else repo.get_companies(conn)
+    result = create_snapshot(conn, out, tag=tag, tickers=tickers, companies=companies)
     conn.close()
     manifest = result["manifest"]
     v = manifest["validate"]["violations"]
@@ -765,6 +792,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--tag", default=None, help="Optional snapshot label stored in manifest.json.")
     s.add_argument("--ticker", nargs="*", help="Limit export to these tickers.")
     s.set_defaults(func=cmd_snapshot)
+
+    s = sub.add_parser("coverage", help="Per-source evidence coverage and gap report (Phase 4.2).")
+    s.add_argument("--ticker", nargs="*", help="Limit to these tickers.")
+    s.add_argument("--validation-set", action="store_true", help="Report validation set tickers.")
+    s.add_argument("--pilot-set", action="store_true", help="Report pilot set tickers.")
+    s.add_argument("--all", action="store_true", help="Report all loaded companies (default).")
+    s.add_argument(
+        "--missing-only",
+        action="store_true",
+        help="Show only sources with at least one ticker missing evidence.",
+    )
+    s.add_argument("--json", action="store_true", help="Print JSON report.")
+    s.add_argument("--output", default=None, help="Write JSON report to this path.")
+    s.set_defaults(func=cmd_coverage)
 
     s = sub.add_parser("show-platforms", help="List platform registry entries and API key status.")
     s.add_argument("--phase", type=int, default=None, help="Filter by phase (default: 1, or all phases with --all).")

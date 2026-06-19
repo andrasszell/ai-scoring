@@ -91,6 +91,7 @@ Latest status per `(ticker, source_type)` — collection audit trail.
 | `files` | Row counts per export file |
 | `validate` | Violation counts from `ai-collect validate` |
 | `coverage` | Evidence rows by `source_type` |
+| `source_coverage` | Per-pillar tickers with/without evidence (see `ai-collect coverage`) |
 | `field_definitions` | Path to this document |
 
 ---
