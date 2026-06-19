@@ -2,6 +2,12 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-19 — Phase 4.3: Parquet export
+
+- **`ai-collect export-evidence --format parquet`**; snapshot bundles include `.parquet` tables.
+- Dependency: `pyarrow>=14`.
+- **237 tests.**
+
 ## 2026-06-19 — Phase 4.2: source coverage report (`ai-collect coverage`)
 
 - **`ai-collect coverage`** — per-`source_type` with/without evidence; JSON export.

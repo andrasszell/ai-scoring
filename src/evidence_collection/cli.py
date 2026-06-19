@@ -8,7 +8,7 @@ from .collectors import SOURCE_KEYS, get_collectors
 from .config import DEFAULT_TICKERS, settings
 from .db import apply_migrations, connect, current_version
 from .db import repository as repo
-from .exporters import export_evidence_jsonl, export_table_csv
+from .exporters import export_evidence_jsonl, export_table_csv, export_table_parquet
 from .logging_config import get_logger, setup_logging
 from .reprocess import reprocess_documents
 from .registry_gate import get_platform_registry, reset_registry_cache
@@ -222,6 +222,8 @@ def cmd_export_evidence(args) -> None:
     tickers = _normalize(args.ticker)
     if args.format == "jsonl":
         n = export_evidence_jsonl(conn, args.output, tickers)
+    elif args.format == "parquet":
+        n = export_table_parquet(conn, "evidence_items", args.output, tickers)
     else:
         n = export_table_csv(conn, "evidence_items", args.output, tickers)
     conn.close()
@@ -689,9 +691,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("name", nargs="+", help="Company name or ticker, e.g. Microsoft or ELAN")
     s.set_defaults(func=cmd_resolve)
 
-    s = sub.add_parser("export-evidence", help="Export evidence items (CSV or JSONL).")
+    s = sub.add_parser("export-evidence", help="Export evidence items (CSV, JSONL, or Parquet).")
     s.add_argument("--output", default="data/exports/evidence_items.csv")
-    s.add_argument("--format", choices=["csv", "jsonl"], default="csv")
+    s.add_argument("--format", choices=["csv", "jsonl", "parquet"], default="csv")
     s.add_argument("--ticker", nargs="*", help="Only export these tickers.")
     s.set_defaults(func=cmd_export_evidence)
 

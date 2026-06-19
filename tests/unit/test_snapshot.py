@@ -22,3 +22,4 @@ def test_create_snapshot_writes_manifest(conn, tmp_path):
     assert result["manifest"]["validate"]["total_evidence"] == 1
     assert result["counts"]["evidence_items.jsonl"] == 1
     assert (tmp_path / "snap" / "companies.csv").is_file()
+    assert (tmp_path / "snap" / "evidence_items.parquet").is_file()

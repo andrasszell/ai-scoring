@@ -37,7 +37,7 @@ Frozen reference for Team 2 (inference) consuming `ai-collect export-all` or
 
 ---
 
-## `evidence_items.csv` / `evidence_items.jsonl`
+## `evidence_items.csv` / `evidence_items.jsonl` / `evidence_items.parquet`
 
 | Field | Type | Description |
 |---|---|---|

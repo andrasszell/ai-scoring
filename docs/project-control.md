@@ -64,9 +64,9 @@ package level. Module layout preserves the standard's intent — see [`setup.md`
 | 0–1 + Block F | Done | [`phase-1-development-plan.md`](phase-1-development-plan.md) |
 | 2.0–2.3 | Done | [`phase-2-implementation.md`](phase-2-implementation.md) |
 | 3 | In progress (3A complete; 3B vendor eval) | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
-| Phase 4 | In progress (4.2 coverage) | [`phase-4-development-plan.md`](phase-4-development-plan.md) |
+| Phase 4 | Complete (4.1–4.3) | [`phase-4-development-plan.md`](phase-4-development-plan.md) |
 
-- **Collectors:** 9 enabled (6 Phase 1 + 3 Phase 2). **236 tests.**
+- **Collectors:** 9 enabled (6 Phase 1 + 3 Phase 2). **237 tests.**
 - **Scoring:** `ai_adoption_score_v0_5` (nine pillars).
 - **Bulk universe:** S&P 500 via `load-companies` (Phase 3: full refresh at scale).
 - **On-demand:** any SEC-listed company by name — Phase 2.0 in [`phase-2-implementation.md`](phase-2-implementation.md).

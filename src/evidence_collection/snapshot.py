@@ -8,7 +8,7 @@ from pathlib import Path
 from .db.migrations import current_version
 from .db import repository as repo
 from .coverage_report import build_coverage_report
-from .exporters import export_evidence_jsonl, export_table_csv
+from .exporters import export_evidence_jsonl, export_table_csv, export_table_parquet
 
 
 def default_snapshot_dir(tag: str | None = None) -> Path:
@@ -35,6 +35,12 @@ def create_snapshot(
         "evidence_items.csv": export_table_csv(conn, "evidence_items", out / "evidence_items.csv", tickers),
         "collector_status.csv": export_table_csv(conn, "collector_status", out / "collector_status.csv", tickers),
         "evidence_items.jsonl": export_evidence_jsonl(conn, out / "evidence_items.jsonl", tickers),
+        "companies.parquet": export_table_parquet(conn, "companies", out / "companies.parquet", tickers),
+        "documents.parquet": export_table_parquet(conn, "documents", out / "documents.parquet", tickers),
+        "evidence_items.parquet": export_table_parquet(conn, "evidence_items", out / "evidence_items.parquet", tickers),
+        "collector_status.parquet": export_table_parquet(
+            conn, "collector_status", out / "collector_status.parquet", tickers
+        ),
     }
 
     report = repo.quality_report(conn)

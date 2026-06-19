@@ -4,6 +4,8 @@ import csv
 import json
 from pathlib import Path
 
+import pandas as pd
+
 # Clean exports for the inference team (Implementation Plan §16). All exports are
 # pure reads of the evidence corpus — no scoring, no interpretation.
 
@@ -39,6 +41,16 @@ def export_table_csv(conn, table: str, output: str | Path, tickers: list[str] | 
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+    return len(rows)
+
+
+def export_table_parquet(conn, table: str, output: str | Path, tickers: list[str] | None = None) -> int:
+    """Export a table as Parquet for warehouse / analytics load (Phase 4.3)."""
+    rows = _rows(conn, table, tickers)
+    out = Path(output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame(rows)
+    df.to_parquet(out, index=False)
     return len(rows)
 
 

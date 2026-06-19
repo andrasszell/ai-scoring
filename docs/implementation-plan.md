@@ -16,7 +16,7 @@ guides live in the phase documents below — not duplicated here.
 | Block F (outcomes) | Complete | [`data-sources.md` § outcomes](data-sources.md#collection-outcome-semantics) |
 | Phase 2 | Complete | [`phase-2-implementation.md`](phase-2-implementation.md) |
 | Phase 3 | In progress | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
-| Phase 4 | In progress | [`phase-4-development-plan.md`](phase-4-development-plan.md) |
+| Phase 4 | Complete | [`phase-4-development-plan.md`](phase-4-development-plan.md) |
 
 **Required docs (§13):** [`project-control.md`](project-control.md) · [`data-sources.md`](data-sources.md) · [`scoring-methodology.md`](scoring-methodology.md) · [`change-log.md`](change-log.md) · [`setup.md`](setup.md)
 
@@ -31,7 +31,7 @@ guides live in the phase documents below — not duplicated here.
 - [x] **Block F — Collection outcome semantics:** `reason:source_empty` / `filtered_to_zero` / failure vocabulary; scoring guardrails (`v0_2+`). **150 tests.**
 - [x] **Phase 2 — On-demand scoring + new sources:** 2.0 ad-hoc scoring, 2.1 GitHub, 2.2 press, 2.3 product docs; `ai_adoption_score_v0_5`. **208 tests (2026-06-16).**
 - [ ] **Phase 3 — Scale (in progress):** 3A complete; 3B.1 done — **3B.2 blocked** (vendor sign-off).
-- [ ] **Phase 4 — Production handoff (in progress):** 4.1–4.2 done; **4.3 Parquet optional** → [`phase-4-development-plan.md`](phase-4-development-plan.md)
+- [x] **Phase 4 — Production handoff (complete):** 4.1–4.3 → [`phase-4-development-plan.md`](phase-4-development-plan.md)
 
 ---
 

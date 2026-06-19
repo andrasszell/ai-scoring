@@ -132,11 +132,13 @@ Full workflow: [`docs/phase-2-implementation.md`](docs/phase-2-implementation.md
 ai-collect export-all --output-dir data/exports        # companies/documents/evidence/status
 ai-collect snapshot --tag phase3_sp500                 # versioned bundle + manifest (Phase 4)
 ai-collect export-evidence --format jsonl --output data/exports/evidence.jsonl
+ai-collect export-evidence --format parquet --output data/exports/evidence_items.parquet
 ai-collect export-evidence --ticker MSFT NVDA          # scope to specific tickers
 ```
 
 `export-all` writes `companies.csv`, `documents.csv`, `evidence_items.csv`,
-`collector_status.csv`, and `evidence_items.jsonl`.
+`collector_status.csv`, and `evidence_items.jsonl`. `snapshot` adds Parquet
+(`.parquet`) for all tables plus `manifest.json`.
 
 ## Score (`ai-score`, inference layer)
 

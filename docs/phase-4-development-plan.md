@@ -53,13 +53,21 @@ ai-collect coverage --json --output data/exports/coverage.json
 
 ---
 
-## Step 4.3 — Parquet export (optional)
+## Step 4.3 — Parquet export
 
 **Goal:** Analytics-friendly format for warehouse load.
 
 **Done when:**
 
-- [ ] `ai-collect export-evidence --format parquet` or snapshot includes `.parquet`.
+- [x] `ai-collect export-evidence --format parquet` and snapshot includes `.parquet`.
+
+**Verify:**
+
+```bash
+ai-collect export-evidence --format parquet --output data/exports/evidence_items.parquet
+ai-collect snapshot --tag phase3_sp500 -o data/exports/snapshots/corpus_phase3_sp500
+# Parquet files: companies.parquet, documents.parquet, evidence_items.parquet, collector_status.parquet
+```
 
 ---
 
