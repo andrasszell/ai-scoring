@@ -2,6 +2,12 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-19 — Phase 4.1: versioned snapshots (`ai-collect snapshot`)
+
+- **`ai-collect snapshot`** — export bundle + `manifest.json` (schema, validate, coverage).
+- [`evidence-field-definitions.md`](evidence-field-definitions.md), [`phase-4-development-plan.md`](phase-4-development-plan.md).
+- **233 tests.**
+
 ## 2026-06-19 — Phase 3A.7 closed; 3B.1 vendor evaluation started
 
 - **Run #26:** 509 companies, 9,291 evidence, 0 validate violations; export

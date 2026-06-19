@@ -272,7 +272,10 @@ config/platforms.yaml → collector → tests → enabled: true → docs → val
 - [ ] Disabled by default until evaluation sign-off.
 - [ ] Scoring pillar decision documented (new version if added).
 
-**Do not start** until 3B.1 evaluation is approved.
+**Do not start** until 3B.1 evaluation is approved. See deferral in
+[`qa/vendor-evaluations/lightcast-vs-serpapi-jobs.md`](qa/vendor-evaluations/lightcast-vs-serpapi-jobs.md).
+
+**Parallel track:** Phase 4 production handoff — [`phase-4-development-plan.md`](phase-4-development-plan.md).
 
 ---
 

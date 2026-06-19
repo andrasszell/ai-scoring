@@ -31,6 +31,7 @@ from .universe.verify import DEFAULT_SPOT_CHECK, spot_check_tickers, universe_st
 from .costs import format_cost_report, summarize_run_costs
 from .retry import build_retry_targets, format_retry_plan, retry_failed_collection
 from .freshness_report import build_freshness_report, format_freshness_report, write_freshness_report
+from .snapshot import create_snapshot, default_snapshot_dir
 
 logger = get_logger("evidence_collection.cli")
 
@@ -509,6 +510,26 @@ def cmd_freshness(args) -> None:
             raise SystemExit(1)
 
 
+def cmd_snapshot(args) -> None:
+    conn = _conn()
+    tag = getattr(args, "tag", None)
+    out = Path(args.output_dir) if args.output_dir else default_snapshot_dir(tag)
+    tickers = _normalize(args.ticker)
+    result = create_snapshot(conn, out, tag=tag, tickers=tickers)
+    conn.close()
+    manifest = result["manifest"]
+    v = manifest["validate"]["violations"]
+    violation_total = sum(v.values())
+    print(f"Snapshot: {result['output_dir']}")
+    print(f"  manifest.json — schema v{manifest['schema_version']}, "
+          f"{manifest['validate']['total_evidence']} evidence rows, "
+          f"{manifest['validate']['companies_with_evidence']} companies")
+    for name, n in result["counts"].items():
+        print(f"  {n:>6}  {name}")
+    if violation_total:
+        print(f"  WARNING: {violation_total} validation violation(s) — see manifest.validate")
+
+
 def cmd_costs(args) -> None:
     conn = _conn()
     run_id = args.run_id or repo.latest_run_id(conn)
@@ -734,6 +755,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit 1 when any company or source is stale (for cron alerts).",
     )
     s.set_defaults(func=cmd_freshness)
+
+    s = sub.add_parser("snapshot", help="Versioned export bundle + manifest for Team 2 (Phase 4).")
+    s.add_argument(
+        "--output-dir",
+        default=None,
+        help="Output directory (default: data/exports/snapshots/corpus_YYYYMMDD or corpus_{tag}).",
+    )
+    s.add_argument("--tag", default=None, help="Optional snapshot label stored in manifest.json.")
+    s.add_argument("--ticker", nargs="*", help="Limit export to these tickers.")
+    s.set_defaults(func=cmd_snapshot)
 
     s = sub.add_parser("show-platforms", help="List platform registry entries and API key status.")
     s.add_argument("--phase", type=int, default=None, help="Filter by phase (default: 1, or all phases with --all).")

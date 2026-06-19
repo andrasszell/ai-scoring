@@ -11,6 +11,7 @@ Start here: **[`project-control.md`](project-control.md)** — index, scope, and
 | Understand scoring | [`scoring-methodology.md`](scoring-methodology.md) |
 | Phase 2 (complete) | [`phase-2-implementation.md`](phase-2-implementation.md) |
 | Phase 3 (planned) | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
+| Phase 4 (in progress) | [`phase-4-development-plan.md`](phase-4-development-plan.md) |
 | Phase 1 history | [`phase-1-development-plan.md`](phase-1-development-plan.md) |
 | Strategic background | [`data-collection-initial-plan.md`](data-collection-initial-plan.md) |
 

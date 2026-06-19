@@ -129,6 +129,7 @@ Full workflow: [`docs/phase-2-implementation.md`](docs/phase-2-implementation.md
 
 ```bash
 ai-collect export-all --output-dir data/exports        # companies/documents/evidence/status
+ai-collect snapshot --tag phase3_sp500                 # versioned bundle + manifest (Phase 4)
 ai-collect export-evidence --format jsonl --output data/exports/evidence.jsonl
 ai-collect export-evidence --ticker MSFT NVDA          # scope to specific tickers
 ```
