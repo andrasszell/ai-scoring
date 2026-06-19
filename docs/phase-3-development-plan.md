@@ -221,14 +221,15 @@ ai-collect freshness --json --output data/exports/freshness.json
 
 **Done when:**
 
-- [ ] `ai-collect load-companies && ai-collect collect --all` completes.
-- [ ] `ai-collect validate` = 0 violations.
+- [x] `ai-collect load-companies && ai-collect collect --all` completes.
+- [x] `ai-collect validate` = 0 violations.
 - [ ] QA sample: manual spot-check per [`docs/qa/`](qa/).
-- [ ] Export + cost report archived.
+- [x] Export + cost report archived.
 
-**Deliverable:** `data/exports/phase3_sp500_YYYYMMDD/`
+**Deliverable:** `data/exports/phase3_sp500_YYYYMMDD/` → [`qa/phase-3-sp500-run.md`](qa/phase-3-sp500-run.md)
 
-**Status (2026-06-18):** collect `--all` started; 50/509 tickers had prior pilot data.
+**Closed 2026-06-19:** Run #26 — 509 companies, 9,291 evidence rows, 0 validate violations.
+Partial SerpAPI/patents (pilot-era); sec + research at full S&P scale.
 
 ---
 
@@ -250,8 +251,8 @@ Audit / reprocess support
 
 **Done when:**
 
-- [ ] Template committed.
-- [ ] At least one candidate (recommend: Lightcast vs SerpAPI jobs) has draft evaluation.
+- [x] Template committed.
+- [x] At least one candidate (recommend: Lightcast vs SerpAPI jobs) has draft evaluation.
 
 ---
 

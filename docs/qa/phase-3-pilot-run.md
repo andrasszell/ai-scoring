@@ -49,4 +49,5 @@ ai-collect export-all --output-dir data/exports/phase3_pilot_20260616
 
 - **3A.5** — `--stale-days` incremental refresh
 - **3A.6** — `ai-collect freshness` corpus age / SLA report
-- **3A.7** — full `collect --all` (in progress — see [`qa/phase-3-sp500-run.md`](qa/phase-3-sp500-run.md))
+- **3A.7** — full S&P collect closed (run #26) — [`qa/phase-3-sp500-run.md`](qa/phase-3-sp500-run.md)
+- **3B.1** — vendor evaluation template + Lightcast draft

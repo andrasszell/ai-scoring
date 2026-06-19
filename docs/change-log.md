@@ -2,6 +2,14 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-19 — Phase 3A.7 closed; 3B.1 vendor evaluation started
+
+- **Run #26:** 509 companies, 9,291 evidence, 0 validate violations; export
+  `data/exports/phase3_sp500_20260619/`.
+- Scope: sec + research + earnings + github (SerpAPI deferred — quota).
+- **3B.1:** [`qa/vendor-evaluations/TEMPLATE.md`](qa/vendor-evaluations/TEMPLATE.md),
+  draft [`lightcast-vs-serpapi-jobs.md`](qa/vendor-evaluations/lightcast-vs-serpapi-jobs.md).
+
 ## 2026-06-19 — Earnings collector: fast empty-path probing
 
 - FMP transcript collector stops after 4 consecutive misses or 6 probes (not 24 quarters).

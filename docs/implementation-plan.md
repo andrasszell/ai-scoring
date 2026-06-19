@@ -30,7 +30,7 @@ guides live in the phase documents below — not duplicated here.
 - [x] **Phase 1 — Core collectors + validation sample:** Blocks A–D. **35 companies, 991 evidence rows, 0 validate violations (2026-06-16).**
 - [x] **Block F — Collection outcome semantics:** `reason:source_empty` / `filtered_to_zero` / failure vocabulary; scoring guardrails (`v0_2+`). **150 tests.**
 - [x] **Phase 2 — On-demand scoring + new sources:** 2.0 ad-hoc scoring, 2.1 GitHub, 2.2 press, 2.3 product docs; `ai_adoption_score_v0_5`. **208 tests (2026-06-16).**
-- [ ] **Phase 3 — Scale (in progress):** 3A.1–3A.6 done; **3A.7 full S&P collect next** → [`phase-3-development-plan.md`](phase-3-development-plan.md)
+- [ ] **Phase 3 — Scale (in progress):** 3A.7 closed (partial SerpAPI); **3B premium vendor eval** → [`phase-3-development-plan.md`](phase-3-development-plan.md)
 - [ ] **Phase 4 — Production handoff:** versioned snapshots, field-definition docs, coverage reports.
 
 ---

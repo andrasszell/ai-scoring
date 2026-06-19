@@ -7,6 +7,7 @@ Start here: **[`project-control.md`](project-control.md)** — index, scope, and
 | See what's done / next | [`implementation-plan.md`](implementation-plan.md) |
 | Run the project | [`setup.md`](setup.md) |
 | Understand platforms & outcomes | [`data-sources.md`](data-sources.md) |
+| Data costs (investor brief) | [`data-sources-investor-brief.md`](data-sources-investor-brief.md) |
 | Understand scoring | [`scoring-methodology.md`](scoring-methodology.md) |
 | Phase 2 (complete) | [`phase-2-implementation.md`](phase-2-implementation.md) |
 | Phase 3 (planned) | [`phase-3-development-plan.md`](phase-3-development-plan.md) |

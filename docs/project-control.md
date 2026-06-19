@@ -63,7 +63,7 @@ package level. Module layout preserves the standard's intent — see [`setup.md`
 |---|---|---|
 | 0–1 + Block F | Done | [`phase-1-development-plan.md`](phase-1-development-plan.md) |
 | 2.0–2.3 | Done | [`phase-2-implementation.md`](phase-2-implementation.md) |
-| 3 | In progress (3A.7 collect running) | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
+| 3 | In progress (3A complete; 3B vendor eval) | [`phase-3-development-plan.md`](phase-3-development-plan.md) |
 | 4 | Planned | [`data-collection-initial-plan.md`](data-collection-initial-plan.md) |
 
 - **Collectors:** 9 enabled (6 Phase 1 + 3 Phase 2). **230 tests.**
