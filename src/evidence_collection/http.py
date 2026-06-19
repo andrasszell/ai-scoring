@@ -22,15 +22,13 @@ def _headers(extra: dict[str, str] | None = None) -> dict[str, str]:
     return headers
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
-def get(
+def _request_get(
     url: str,
     *,
     params: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
     sec: bool = False,
 ) -> requests.Response:
-    """HTTP GET with retries, a descriptive User-Agent, and SEC rate limiting."""
     global _last_sec_request
     if sec:
         elapsed = time.time() - _last_sec_request
@@ -40,6 +38,28 @@ def get(
     response = requests.get(url, params=params, headers=_headers(headers), timeout=settings.request_timeout)
     response.raise_for_status()
     return response
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
+def get(
+    url: str,
+    *,
+    params: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
+    sec: bool = False,
+) -> requests.Response:
+    """HTTP GET with retries, a descriptive User-Agent, and SEC rate limiting."""
+    return _request_get(url, params=params, headers=headers, sec=sec)
+
+
+def get_once(
+    url: str,
+    *,
+    params: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
+) -> requests.Response:
+    """Single-attempt GET — for vendors where 4xx retries waste quota and wall time."""
+    return _request_get(url, params=params, headers=headers, sec=False)
 
 
 def http_error_status(exc: BaseException) -> int | None:

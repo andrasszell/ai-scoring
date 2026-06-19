@@ -9,14 +9,18 @@ def test_retry_failed_parser_has_flags():
     assert args.source == ["research"]
 
 
-def test_retry_failed_dry_run_empty_db(capsys, conn, tmp_path, monkeypatch):
-    monkeypatch.setenv("AI_DEPTH_DB", str(tmp_path / "dry.sqlite"))
+def test_retry_failed_dry_run_empty_db(capsys, tmp_path, monkeypatch):
+    db_path = tmp_path / "dry.sqlite"
     from evidence_collection.db import apply_migrations, connect
 
-    db = tmp_path / "dry.sqlite"
-    c = connect(db)
+    c = connect(db_path)
     apply_migrations(c)
     c.close()
+
+    monkeypatch.setattr(
+        "evidence_collection.cli.settings",
+        type("S", (), {"db_path": db_path, "log_level": "WARNING"})(),
+    )
 
     cmd_retry_failed(type("Args", (), {"ticker": None, "source": None, "dry_run": True})())
     out = capsys.readouterr().out

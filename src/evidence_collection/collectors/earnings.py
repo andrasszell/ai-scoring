@@ -9,7 +9,7 @@ from ..config import settings
 from ..dates import transcript_source_date
 from ..db import repository as repo
 from ..extraction import candidate_paragraphs, content_hash
-from ..http import get
+from ..http import get_once, http_error_status
 from ..models import CollectionContext, CollectorResult, collector_result
 from ..outcomes import OutcomeReason
 from ..status import CollectionStatus
@@ -18,6 +18,12 @@ from ..registry_gate import api_key_missing_result
 
 BASE = "https://financialmodelingprep.com/api/v3"
 LOOKBACK_YEARS = 6
+# When no transcript is found yet, stop after this many quarter probes (not full lookback).
+MAX_PROBE_QUARTERS = 6
+# Stop after this many consecutive empty/error responses without a transcript hit.
+MAX_CONSECUTIVE_MISSES = 4
+# FMP plan/auth errors — no point probing further quarters for this ticker.
+FMP_STOP_STATUSES = frozenset({401, 403})
 logger = logging.getLogger(__name__)
 
 
@@ -45,27 +51,55 @@ class EarningsCallCollector(Collector):
         current_year = date.today().year
         transcripts_seen = 0
         api_calls = 0
+        consecutive_misses = 0
         rows: list[dict] = []
+        stop_ticker = False
         for year in range(current_year, current_year - LOOKBACK_YEARS, -1):
+            if stop_ticker:
+                break
             for quarter in range(4, 0, -1):
                 if transcripts_seen >= limit_quarters:
                     break
+                if transcripts_seen == 0 and api_calls >= MAX_PROBE_QUARTERS:
+                    break
+                if transcripts_seen == 0 and consecutive_misses >= MAX_CONSECUTIVE_MISSES:
+                    break
                 params = {"symbol": ticker, "quarter": quarter, "year": year, "apikey": settings.fmp_api_key}
                 try:
-                    resp = get(url, params=params)
+                    resp = get_once(url, params=params)
                     api_calls += 1
                     data = resp.json()
                 except Exception as exc:  # noqa: BLE001
+                    api_calls += 1
+                    status = http_error_status(exc)
+                    if status in FMP_STOP_STATUSES:
+                        logger.warning(
+                            "FMP transcript access denied for %s (HTTP %s); skipping remaining quarters",
+                            ticker,
+                            status,
+                        )
+                        stop_ticker = True
+                        break
                     logger.warning(
                         "FMP transcript fetch failed %s %s Q%s: %s", ticker, year, quarter, exc
                     )
+                    consecutive_misses += 1
+                    if transcripts_seen == 0 and consecutive_misses >= MAX_CONSECUTIVE_MISSES:
+                        break
                     continue
                 if not data:
+                    consecutive_misses += 1
+                    if transcripts_seen == 0 and consecutive_misses >= MAX_CONSECUTIVE_MISSES:
+                        break
                     continue
                 item = data[0] if isinstance(data, list) else data
                 content = item.get("content") or item.get("transcript") or ""
                 if not str(content).strip():
+                    consecutive_misses += 1
+                    if transcripts_seen == 0 and consecutive_misses >= MAX_CONSECUTIVE_MISSES:
+                        break
                     continue
+                consecutive_misses = 0
                 transcript_date, date_provenance = transcript_source_date(item, year=year, quarter=quarter)
                 source_url = f"fmp://earning_call_transcript/{ticker}/{year}/Q{quarter}"
                 transcripts_seen += 1

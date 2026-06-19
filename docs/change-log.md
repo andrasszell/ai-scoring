@@ -2,6 +2,18 @@
 
 Important changes and decisions (Coding Standards §13). Newest first.
 
+## 2026-06-19 — Earnings collector: fast empty-path probing
+
+- FMP transcript collector stops after 4 consecutive misses or 6 probes (not 24 quarters).
+- `get_once()` for FMP — no triple-retry on 4xx; immediate stop on 401/403.
+- Full S&P earnings phase ~1–3 h vs ~72 h when plan returns no transcripts.
+- **231 tests.**
+
+## 2026-06-18 — Investor brief: data sources and subscription costs
+
+- [`data-sources-investor-brief.md`](data-sources-investor-brief.md) — pillar summary,
+  subscriptions, permissions, pilot cost estimates (~$32/full S&P refresh).
+
 ## 2026-06-18 — Phase 3A.7: full S&P 500 production runbook
 
 - **`scripts/phase3_sp500_run.sh`** — load, collect `--all`, validate, costs, freshness,

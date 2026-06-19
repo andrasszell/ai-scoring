@@ -270,6 +270,10 @@ ai-collect retry-failed --source product_docs  # limit to one collector
 After a pilot or full run, use `ai-collect retry-failed` before re-collecting the
 entire universe.
 
+**Earnings (FMP) probe limits:** the earnings collector stops after 4 consecutive
+empty/error quarters (single HTTP attempt per quarter; no retry storm on 4xx). This
+keeps full-universe runs practical when transcript access is limited on the current plan.
+
 **Incremental refresh (3A.5):**
 
 ```bash

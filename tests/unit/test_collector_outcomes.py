@@ -252,7 +252,7 @@ def test_earnings_filtered_to_zero_when_transcript_has_no_ai_keywords(conn, monk
             return _FakeResponse([{"date": "2025-10-25", "content": plain}])
         return _FakeResponse([])
 
-    monkeypatch.setattr("evidence_collection.collectors.earnings.get", fake_get)
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.NO_RESULTS

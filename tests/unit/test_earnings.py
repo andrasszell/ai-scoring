@@ -63,7 +63,7 @@ def test_earnings_no_results_when_fmp_returns_empty(conn, monkeypatch, tmp_path)
     def fake_get(url, params=None):
         return _FakeResponse([])
 
-    monkeypatch.setattr("evidence_collection.collectors.earnings.get", fake_get)
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.NO_RESULTS
@@ -83,7 +83,7 @@ def test_earnings_skips_empty_transcript_content(conn, monkeypatch, tmp_path):
             return _FakeResponse([{"date": "2025-10-25", "content": "   "}])
         return _FakeResponse([])
 
-    monkeypatch.setattr("evidence_collection.collectors.earnings.get", fake_get)
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.NO_RESULTS
@@ -108,13 +108,31 @@ def test_earnings_continues_after_fetch_error(conn, monkeypatch, tmp_path):
             )
         return _FakeResponse([])
 
-    monkeypatch.setattr("evidence_collection.collectors.earnings.get", fake_get)
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.SUCCESS
     assert result.evidence_count >= 1
     assert result.documents_count == 1
     assert calls["n"] >= 2
+
+
+def test_earnings_stops_after_probe_limit_when_all_empty(conn, monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "evidence_collection.collectors.earnings.settings",
+        _earnings_settings(tmp_path),
+    )
+    calls = {"n": 0}
+
+    def fake_get(url, params=None):
+        calls["n"] += 1
+        return _FakeResponse([])
+
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
+    ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
+    result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=4)
+    assert result.status == CollectionStatus.NO_RESULTS
+    assert calls["n"] == 4  # MAX_CONSECUTIVE_MISSES when all empty (not 24)
 
 
 def test_earnings_stores_source_date_and_date_provenance(conn, monkeypatch, tmp_path):
@@ -129,7 +147,7 @@ def test_earnings_stores_source_date_and_date_provenance(conn, monkeypatch, tmp_
             return _FakeResponse([{"content": AI_TRANSCRIPT}])
         return _FakeResponse([])
 
-    monkeypatch.setattr("evidence_collection.collectors.earnings.get", fake_get)
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     result = EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
     assert result.status == CollectionStatus.SUCCESS
@@ -162,7 +180,7 @@ def test_earnings_uses_fmp_date_provenance_when_present(conn, monkeypatch, tmp_p
             return _FakeResponse([{"date": "2025-04-28", "content": AI_TRANSCRIPT}])
         return _FakeResponse([])
 
-    monkeypatch.setattr("evidence_collection.collectors.earnings.get", fake_get)
+    monkeypatch.setattr("evidence_collection.collectors.earnings.get_once", fake_get)
     ctx = CollectionContext(conn=conn, run_id=1, settings=settings)
     EarningsCallCollector().collect(ctx, COMPANY, limit_quarters=1)
 
